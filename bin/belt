@@ -1,0 +1,63 @@
+#! /usr/bin/env python
+
+import logging
+import optparse as op
+
+import belt
+
+LEVELS = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL
+}
+
+__usage__ = "%prog [OPTIONS]"
+
+def options():
+    return [
+        op.make_option('-d', '--dir', dest='dir', default=None,
+            help='Directory to change to before running the pipeline.'),
+        op.make_option('-p', '--pipeline', dest='pipeline', default='.',
+            help='Directory to search for pipeline tasks. [%default]'),
+        op.make_option('--log-level', dest='log_level', default='info',
+            help='Logging verbosity [%default]'),
+        op.make_option('--log-file', dest='log_file', default='-',
+            help='File to record log messages to. - means stderr. [%default]')
+    ]
+
+def configure_logging(opts):
+    handlers = []
+    if opts.log_file != '-':
+        handlers.append(logging.FileHandler(opts.log_file))
+    else:
+        handlers.append(logging.StreamHandler())
+
+    logger = logging.getLogger()    
+    logger.setLevel(LEVELS.get(opts.log_level.upper(), logging.INFO))
+    for h in handlers:
+        h.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+        logger.addHandler(h)
+
+def load_jobs(jobdir):
+    for p in jobdir.walk(pattern="*.py"):
+        code = compile(p.bytes(), p, 'exec')
+        exec code in {}
+
+def main():
+    parser = op.OptionParser(usage=__usage__, option_list=options())
+    opts, args = parser.parse_args()
+    configure_logging(opts)
+
+    jobdir = belt.path(opts.pipeline).abspath()
+
+    if opts.dir:
+        p = belt.path(opts.dir)
+        if not p.exists():
+            p.makedirs()
+        os.chdir(p)
+    
+    load_jobs(jobdir)
+        
+    belt.engine.run()
