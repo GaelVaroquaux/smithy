@@ -42,30 +42,24 @@ def configure_logging(opts):
         h.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
         logger.addHandler(h)
 
-def load_jobs(jobdir):
-    glbls = {}
-    for p in jobdir.walk(pattern="*.py"):
-        glbls[p] = {'__file__': p}
-        code = compile(p.bytes(), p, 'exec')
-        exec p.bytes() in glbls[p]
-    return glbls
-
 def main():
     parser = op.OptionParser(usage=__usage__, option_list=options())
     opts, args = parser.parse_args()
     configure_logging(opts)
 
-    jobdir = belt.path(opts.pipeline).abspath()
+    jobdir = belt.path(opts.pipeline).abspath()    
 
     if opts.dir:
         p = belt.path(opts.dir)
         if not p.exists():
             p.makedirs()
         os.chdir(p)
-    
-    load_jobs(jobdir)
-    
-    belt.engine.run()
+
+    engine = belt.engine = belt.Engine()
+    try:
+        engine.load(jobdir).run()
+    finally:
+        engine.close()
 
 if __name__ == '__main__':
     main()

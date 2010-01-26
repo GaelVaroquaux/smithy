@@ -1,5 +1,5 @@
 
-from engine import engine
+import belt
 from path import path
 
 def topath(p):
@@ -18,5 +18,5 @@ class build(object):
             self.targets = map(topath, t)
 
     def __call__(self, func):
-        engine.add(func, self.sources, self.targets)
+        belt.engine.add(func, self.sources, self.targets)
         return func

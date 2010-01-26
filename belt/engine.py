@@ -47,11 +47,20 @@ class Builder(object):
 
 class Engine(object):
     def __init__(self):
+        self.globals = {}
         self.builders = {}
         self.signatures = anydbm.open(".belt-sigs", "c")
 
     def close(self):
         self.signatures.close()
+
+    def load(self, basedir):
+        for p in basedir.walk(pattern="*.py"):
+            print p
+            self.globals[p] = {'__file__': p}
+            code = compile(p.bytes(), p, 'exec')
+            exec p.bytes() in self.globals[p]
+        return self
 
     def add(self, func, sources, targets):
         for t in targets:
@@ -126,6 +135,3 @@ class Engine(object):
     def hash(self, hashes):
         data = ''.join(sorted(hashes))
         return hashlib.sha1(data).hexdigest()
-
-engine = Engine()
-atexit.register(engine.close)
