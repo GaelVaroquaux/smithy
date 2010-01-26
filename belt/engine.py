@@ -50,19 +50,22 @@ class Engine(object):
         self.globals = {}
         self.builders = {}
         self.signatures = anydbm.open(".belt-sigs", "c")
+        self.curr_module
 
     def close(self):
         self.signatures.close()
 
     def load(self, basedir):
         for p in basedir.walk(pattern="*.py"):
-            print p
-            self.globals[p] = {'__file__': p}
+            parts = basedir.relpathto(p).splitall()
+            modname = '.'.join(parts[1:-1])
+            self.globals[p] = {'__file__': p, '__module__': modname}
             code = compile(p.bytes(), p, 'exec')
             exec p.bytes() in self.globals[p]
         return self
 
     def add(self, func, sources, targets):
+        print dir(func), func.__module__
         for t in targets:
             if t in self.builders:
                 raise ValueError("Builder already exists for: %s" % t)
