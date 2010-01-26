@@ -1,28 +1,33 @@
 import urllib
+
 import belt as b
+g = b.glob
 
 URL = "ftp://ftp.ncbi.nih.gov/genomes/Bacteria/lproks_1.txt"
 BASE = b.path.getcwd()
 
-@b.files(None, BASE/"lproks.txt")
-def lproks(job, src, tgt):
-    data = urllib.urlopen(URL).read()
-    tgt.write_bytes(data)
+@b.build(BASE/"lproks.txt")
+def lproks(lproks):
+    src = BASE/"lproks.input"
+    src.copy(lproks)
 
-@b.files(BASE/"lproks.txt", None)
-def read_lproks(job, src, tgt):
-    with src.open() as handle:
+@b.build(
+    g(BASE/"lp/*.lp"),
+    BASE/"lproks.txt",
+    BASE/"lproks.input",
+)
+def read_lproks(pattern, lptext, lpinput):
+    with lptext.open() as handle:
         for i in range(2):
             handle.readline()
         for line in handle:
             bits = line.strip("\t\n").split("\t")
-            newfn = BASE/"%s-%s.lp" % (bits[0], bits[1])
+            newfn = BASE/("lp/%s-%s.lp" % (bits[0], bits[1]))
+            if not newfn.dirname().exists():
+                newfn.dirname().makedirs()
             newfn.write_bytes(line)
-            j.add_file(newfn)
 
-@b.files(read_lproks, BASE/"summary.txt")
-def summarize(job, srcs, tgt):
-    sum = 0
-    for src in srcs:
-        sum += len(src.bytes())
-    tgt.text("Length: %s" % num_bytes)
+@b.build(BASE/"summary.txt", g(BASE/"lp/*.lp"))
+def summarize(summary, pattern):
+    count = sum(map(lambda f: f.size, pattern.glob()))
+    summary.write_text("Length: %s" % count)

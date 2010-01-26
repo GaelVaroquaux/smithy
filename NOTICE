@@ -19,6 +19,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
-* path.py
+path.py
+=======
+
+The path.py component that is included:
+
     Jason Orendorff <jason@jorendorff.com>
     License :: Freely Distributable

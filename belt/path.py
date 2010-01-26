@@ -501,7 +501,7 @@ class path(_base):
         """
         return fnmatch.fnmatch(self.name, pattern)
 
-    def glob(self, pattern):
+    def glob(self, pattern=None):
         """ Return a list of path objects that match the pattern.
 
         pattern - a path relative to this directory, with wildcards.
@@ -510,7 +510,11 @@ class path(_base):
         of all the files users have in their bin directories.
         """
         cls = self.__class__
-        return [cls(s) for s in glob.glob(_base(self / pattern))]
+        if pattern is not None:
+            p = _base(self / pattern)
+        else:
+            p = _base(self)
+        return [cls(s) for s in glob.glob(p)]
 
     # --- Reading or writing an entire file at once.
 
@@ -776,11 +780,13 @@ class path(_base):
             f.close()
         return m.hexdigest()
 
-    def read_sha1(self):
+    def sha1(self):
         """ Calculate the sha1 hash for this file.
 
         This reads through the entire file.
         """
+        if not self.exists():
+            return None
         f = self.open('rb')
         try:
             s = hashlib.sha1()
