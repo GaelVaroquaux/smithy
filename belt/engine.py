@@ -64,25 +64,11 @@ class Engine(object):
     def run(self):
         self.root_graph()
         for b in self.walk():
-            if b.func is None:
-                b.finished = True
-                for t in b.targets:
-                    self.signatures[t] = t.sha1()
-                continue
-            shashes = [self.signatures[s] for s in b.sources]
-            needs_built = False
-            for t in b.targets:
-                thash = t.sha1()
-                if thash is not None:
-                    thash = self.hash(shashes + [thash])
-                    if thash == self.signatures.get(t):
-                        continue
-                needs_built = True
-                break
-            if needs_built or len(b.sources) == 0:
+            if b.func and self.needs_built(b):
                 b.build()
-                for t in b.targets:
-                    self.signatures[t] = self.hash(shashes + [t.sha1()])
+            shashes = [self.signatures[s] for s in b.sources]
+            for t in b.targets:
+                self.signatures[t] = self.hash(shashes + [t.sha1()])
             b.finished = True
 
     def root_graph(self):
@@ -123,6 +109,19 @@ class Engine(object):
             if not self.builders[s].finished:
                 return False
         return True
+    
+    def needs_built(self, b):
+        if len(b.sources) == 0:
+            return True
+        shashes = [self.signatures[s] for s in b.sources]
+        for t in b.targets:
+            thash = t.sha1()
+            if thash is None:
+                return True
+            thash = self.hash(shashes + [thash])
+            if thash != self.signatures.get(t):
+                return True
+        return False
 
     def hash(self, hashes):
         data = ''.join(sorted(hashes))
