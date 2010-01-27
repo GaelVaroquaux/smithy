@@ -39,7 +39,7 @@ def configure_logging(opts):
     logger = logging.getLogger()    
     logger.setLevel(LEVELS.get(opts.log_level.upper(), logging.INFO))
     for h in handlers:
-        h.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+        h.setFormatter(logging.Formatter("%(message)s"))
         logger.addHandler(h)
 
 def main():

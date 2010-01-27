@@ -39,6 +39,12 @@ class Builder(object):
             args = [self.targets] + self.sources            
         self.func(*args)
 
+    def log_parameters(self):
+        for src in self.sources:
+            log.info("%10s -> %s" % ("", src))
+        for tgt in self.targets:
+            log.info("%10s <- %s" % ("", tgt))
+
 class Engine(object):
     def __init__(self):
         self.globals = {}
@@ -73,10 +79,11 @@ class Engine(object):
             if not b.func:
                 pass
             elif self.needs_built(b):
-                log.info("BUILD %s" % b)
+                log.info("%-10s %s" % ("[BUILD]", b))
+                b.log_parameters()
                 b.build()
             else:
-                log.info("SKIPPED %s" % b)
+                log.info("%-10s %s" % ("[SKIPPED]", b))
             shashes = [self.signatures[s] for s in b.sources]
             for t in b.targets:
                 thash = t.sha1()
