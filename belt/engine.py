@@ -26,10 +26,13 @@ class Builder(object):
         name = ':'.join(name)
         return "<Builder %r %d>" % (name, id(self))
 
+    def __str__(self):
+        name = filter(None, [self.func.__module__, self.func.__name__])
+        return ':'.join(name)
+
     def build(self):
         if not self.func:
             return
-        log.info("%s" % self)
         if len(self.targets) == 1:
             args = self.targets + self.sources
         else:
@@ -67,8 +70,13 @@ class Engine(object):
     def run(self):
         self.root_graph()
         for b in self.walk():
-            if b.func and self.needs_built(b):
+            if not b.func:
+                pass
+            elif self.needs_built(b):
+                log.info("BUILD %s" % b)
                 b.build()
+            else:
+                log.info("SKIPPED %s" % b)
             shashes = [self.signatures[s] for s in b.sources]
             for t in b.targets:
                 thash = t.sha1()
