@@ -8,16 +8,9 @@ import logging
 import pprint
 
 from path import path
+from util import glob
 
 log = logging.getLogger(__name__)
-
-class glob(path):
-    def __repr__(self):
-        return 'glob(%s)' % path.__repr__(self)
-    
-    def sha1(self):
-        data = [path(f).sha1() for f in self.glob()]
-        return hashlib.sha1(''.join(sorted(data))).hexdigest()
 
 class Builder(object):
     def __init__(self, func, sources, targets):

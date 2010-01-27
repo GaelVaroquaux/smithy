@@ -1,6 +1,6 @@
 
-import belt as b
+from belt import build
 
-@b.build("bar.txt")
+@build("bar.txt")
 def mkbar(bar):
     bar.write_text("Hooray!")
