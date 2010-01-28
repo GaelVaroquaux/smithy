@@ -583,7 +583,8 @@ class path(_base):
                      .replace(u'\x85', u'\n')
                      .replace(u'\u2028', u'\n'))
 
-    def write_text(self, text, encoding=None, errors='strict', linesep=os.linesep, append=False):
+    def write_text(self, text, encoding=None, errors='strict',
+                        linesep=os.linesep, append=False):
         r""" Write the given text to this file.
 
         The default behavior is to overwrite any existing file;
