@@ -3,6 +3,10 @@
 import logging
 import optparse as op
 import os
+import sys
+
+if os.path.exists("belt/__init__.py"):
+    sys.path.insert(0, ".")
 
 import belt
 

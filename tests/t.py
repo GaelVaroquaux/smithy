@@ -6,31 +6,22 @@ import os
 import re
 import unittest
 
-from gunicorn.http import HttpParser
+import belt
 
 dirname = os.path.dirname(__file__)
+base = belt.path(dirname) / "tmp"
 
-
-def data_source(fname, eol):
-    with open(fname) as handle:
-        lines = []
-        for line in handle:
-            line = line.rstrip("\n").replace("\\r\\n", "\r\n")
-            lines.append(line)
-        return "".join(lines)
-
-class request(object):
-    def __init__(self, name, eol="\r\n"):
-        self.fname = os.path.join(dirname, "requests", name)
-        self.eol = eol
-        
+class root(object):
+    def __init__(self, path):
+        self.path = belt.path(path)
     def __call__(self, func):
-        def run():
-            src = data_source(self.fname, self.eol)
-            func(src, HttpParser())
-        run.func_name = func.func_name
-        return run
-    
+        def f(*args, **kwargs):
+            if self.path.exists():
+                self.path.rmtree()
+            func(self.path)
+        f.func_name = func.func_name
+        return f
+
 def eq(a, b):
     assert a == b, "%r != %r" % (a, b)
 
