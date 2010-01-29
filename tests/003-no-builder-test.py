@@ -25,4 +25,6 @@ def test_missing_source(root):
     belt.build(src, e)(first)
     belt.build(tgt, mid, e)(second)
     t.raises(RuntimeError, e.run)
-    t.eq(src.bytes(), "a")
+    if src.exists():
+        # Might've evaulated missing mid first.
+        t.eq(src.bytes(), "a")
