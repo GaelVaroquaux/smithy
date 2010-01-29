@@ -1,0 +1,7 @@
+Things that Need Doing
+======================
+
+* Switch to timestamp based on configurable filesize.
+* Pattern matching for @build decorators.
+* Figure out some way to allow for db builder conditions
+    - Ie, don't run a builder based on something other than hash.
