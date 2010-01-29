@@ -90,7 +90,6 @@ class FunctionBuilder(Builder):
             args = self.targets() + self.sources()
         else:
             args = [self.targets()] + self.sources()
-        print args
         self.func(*args)
         self._finished = True
     

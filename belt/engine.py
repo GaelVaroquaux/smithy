@@ -5,8 +5,6 @@ import hashlib
 import imp
 import logging
 
-import pprint
-
 from builder import ImplicitBuilder
 from path import path
 from util import glob
