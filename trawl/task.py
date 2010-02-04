@@ -3,6 +3,8 @@ import re
 import threading
 import time
 
+from trawl.chain import InvocationChain, EmptyInvocationChain
+
 class Task(object):
     def __init__(self, app, name):
         self.app = app
@@ -20,7 +22,7 @@ class Task(object):
     
     def __repr__(self):
         klass = self.__class__.__name__
-        reutrn "<%s %s => [%s]>" % (klass, self.name, ', '.join(self.deps))
+        return "<%s %s => [%s]>" % (klass, self.name, ', '.join(self.deps))
 
     @staticmethod
     def scoped_name(scope, task_name):
@@ -43,32 +45,34 @@ class Task(object):
 
     def enhance(self, action=None, deps=None):
         "Add an action and/or dependencies to this task."
-        if func is not None:
-            self.actions.append(func)
+        if action is not None:
+            self.actions.append(action)
         if deps is not None:
             self.deps.extend(deps)
         return self
 
     def execute(self, args=None):
         "Execute the actions associated with this task."
-        args = args or TaskArgs.EMPTY
-        if self.app.opts.dryrun:
+        args = args or tuple() #TaskArgs.EMPTY
+        if self.app.is_dry_run():
             print "** Execute (dry run) %s" % self.name
             return
-        if self.app.opts.trace:
-            print "** Execute %s" % self.name
-        if not len(self.actions)
+        self.app.trace("** Execute %s" % self.name)
+        if not len(self.actions):
             self.mgr.add_from_rule(self.name)
         for act in self.actions:
-            if act.func_code.co_argcount == 1:
-                act(self)
+            if act.func_code.co_argcount == 0:
+                ret = act()
+            elif act.func_code.co_argcount == 1:
+                ret = act(self)
             else:
-                act(self, args)
+                ret = act(self, *args)
+            self.app.log_output(self.name, ret)
 
     def invoke(self, *args):
         "Invoke the task if it is needed. Prerequisites are invoked first."
-        args = TaskArguments(self._arg_names, args)
-        self._invoke(args, InvocationChain.EMPTY)
+        #args = TaskArguments(self.arg_names, args)
+        self._invoke(args, EmptyInvocationChain())
 
     def needed(self):
         "Is this task needed?"
@@ -89,10 +93,10 @@ class Task(object):
         return time.time()
     
     def _invoke(self, args, chain):
-        chain = InvocationChain.append(self, chain)
+        chain = InvocationChain(chain, self)
+        self.app.trace("** Chain: %s" % chain)
         with self.lock:
-            if self.app.opts.trac:
-                print "** Invoke %s %s" % (self.name, self._fmt_trace_flags)
+            self.app.trace("** Invoke %s %s" % (self.name, self._trace_info()))
             if self.already_invoked:
                 return
             self.already_invoked = True
@@ -101,16 +105,17 @@ class Task(object):
                 self.execute(args)
     
     def _invoke_deps(self, args, chain):
-        def _invoke_prereq(p):
+        self.app.trace("** Deps: %s" % ', '.join(self.deps))
+        def _invoke_dep(p):
             prereq = self.mgr.lookup(p, self.scope)
-            prereq_args = args.new_scope(prereq.arg_names)
-            prereq._invoke(prereq_args, chain)
-        map(_invoke_prereq, self.deps)
+            #prereq_args = args.new_scope(prereq.arg_names)
+            prereq._invoke(args, chain)
+        map(_invoke_dep, self.deps)
 
-    def _fmt_trace_flags(self):
+    def _trace_info(self):
         "Format trace flags for display."
         flags = []
-        if not self._already_invoked:
+        if not self.already_invoked:
             flags.append("first_time")
         if not self.needed():
             flags.append("not_needed")

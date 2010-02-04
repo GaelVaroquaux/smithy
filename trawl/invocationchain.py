@@ -1,3 +1,0 @@
-
-class InvocationChain(object):
-    pass

@@ -1,4 +1,6 @@
 
+import os
+
 from trawl.const import EARLY
 from trawl.task import Task
 
@@ -11,7 +13,7 @@ class FileTask(Task):
     def needed(self):
         if not os.path.exists(self.name):
             return True
-        return self._out_of_date(self.timestamp()):
+        return self._out_of_date(self.timestamp())
 
     def timestamp(self):
         if os.path.exists(self.name):

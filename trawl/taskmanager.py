@@ -1,4 +1,6 @@
 
+from trawl.exceptions import TaskNotFoundError
+
 class TaskManager(object):
     
     def __init__(self, app):
@@ -23,10 +25,15 @@ class TaskManager(object):
         self.rules.append((pattern, deps, action))
     
     def add_task(self, type, name, action=None, deps=None):
-        name = type.scope_name(self.scope, name)
-        task = self.intern(class, name)
+        name = type.scoped_name(self.scope, name)
+        task = self._intern(type, name)
         task.enhance(action=action, deps=deps)
         return task
+
+    def lookup(self, name, scope=None):
+        if name not in self.tasks:
+            raise TaskNotFoundError(name)
+        return self.tasks[name]
 
     def push_scope(self, scope):
         self.scope.append(scope)
@@ -37,20 +44,16 @@ class TaskManager(object):
         if scope != self.scope[-1]:
             raise ValueError("%s != %s" % self.scope[-1], scope)
         self.scope.pope(-1)
-
-    def intern(self, class, name):
-        """\
-        Lookup a task. Return an existing task if found, otherwise
-        create a task of the curent type.
-        """
-        if name not in self.tasks:
-            self.tasks[name] = type(name, self.app)
-        return self.tasks[name]
     
     def synthesize_file_task(self, task_name):
         if not os.path.isfile(task_name):
             return None
         return self.define_task(FileTask, task_name)
+    
+    def _intern(self, type, name):
+        if name not in self.tasks:
+            self.tasks[name] = type(self.app, name)
+        return self.tasks[name]
     
     def _apply_rule(self, name, extensions, action, depth):
         def _mk_task(src):

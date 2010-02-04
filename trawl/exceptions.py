@@ -1,7 +1,20 @@
 
+class TaskNotFoundError(KeyError):
+    def __init__(self, name):
+        self.name = name
+    def __str__(self):
+        return "Task not found: %s" % self.name
+
 class TaskArgumentError(Exception):
     "Illformed task declaration"
     pass
+    
+class DependencyCycleError(RuntimeError):
+    "Cyclic invocation chain."
+    def __init__(self, name):
+        self.name = name
+    def __str__(self):
+        return "Dependency cycle detected at: %s" % self.name
 
 class NoRuleError(Exception):
     "Unable to recursively generate a task for this source."

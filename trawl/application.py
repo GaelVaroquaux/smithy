@@ -1,48 +1,77 @@
 
 import optparse as op
 
+from trawl.taskmanager import TaskManager
+
+__usage__ = "[OPTIONS] task1 [task2 ...]"
+
 class Application(object):
     def __init__(self):
         self.mgr = TaskManager(self)
         self.opts = None
         self.args = []
+        self._dbg = []
 
-    def run(self, opts, args):
-        self.opts, self.args = opts, args
+    def clear(self, tasks=False):
+        if tasks: self.mgr = TaskManager(self)
+        for t in self.mgr.tasks.itervalues():
+            t.reenable()
+        self._dbg = []
+
+    def run(self, opts, tasks):
+        self.opts = opts
+        self.setup()
+        
+        for t in tasks:
+            self.mgr.lookup(t).invoke()
+
+    def setup(self):
+        pass
+
+    def log_output(self, task, rval):
+        self._dbg.append((task, rval))
+
+    def is_dry_run(self):
+        return getattr(self.opts, "dryrun", False)
+    
+    def trace(self, mesg, is_rule=False):
+        print mesg
 
 application = Application()
 
 def options():
     return [
-        op.make_option('--dry-run', '-n', default=False, action="store_true",
+        op.make_option('-n', dest="dryrun", default=False, action="store_true",
             help="Do a dry run without executing actions."),
 
-        op.make_option('--tasks', '-T', default=None, meta="PATTERN",
+        op.make_option('-T', dest="task_list", default=None, metavar="PATTERN",
             help="List the tasks matching PATTERN, then exit."),
-        op.make_option('--deps', '-d', default=False, action="store_true",
+        op.make_option('-d', dest="do_deps", default=False, action="store_true",
             help="Display the tasks and dependencies, then exit."),
 
-        op.make_option('--trawlfile', '-f', default=None, meta="FILE"
+        op.make_option('-f', dest="trawlfile", default=None, metavar="FILE",
             help="Use FILE as the Trawlfile"),
-        op.make_option('--trawl-lib', '-T', default='trawlers', meta="DIR",
+        op.make_option('-L', dest="libdir", default='./trawlers', metavar="DIR",
             help="Auto-import any .trawl files in DIR. [Default %default]"),
+        op.make_option('-I', dest="incdir", default=None, metavar="DIR",
+            help="Add DIR to the PYTHONPATH"),
 
-        op.make_option('--no-search', '-N', default=False, action='store_true',
+        op.make_option('-N', dest="incsys", default=False, action='store_true',
             help="Do not search parent directories for a Trawlfile"),
-        op.make_option('--system', '-g', default=None, meta="DIR",
+        op.make_option('-g', dest="sysdir", default=None, metavar="DIR",
             help="Use global trawler files. [Default ~/.trawl/*.trawl]"),
-        op.make_option('--no-system', '-G', default=False, action="store_false",
+        op.make_option('-G', dest="ignsys", default=False, action="store_false",
             help="Ignore system trawlers."),
         
-        op.make_option('--rules', default=False, action="store_true",
+        op.make_option('-r', dest="rules", default=False, action="store_true",
             help="Trace rule resolution steps."),
-        op.make_option('--trace', '-t', default=False, action="store_true",
+        op.make_option('-t', dest="trace", default=False, action="store_true",
             help="Turn on task execution tracing."),
-        op.make_option('--verbose', '-v', default=False, action="store_true",
+        op.make_option('-v', dest="verbose", default=False, action="store_true",
             help="Log messages to standard output."),
-        op.make_option('--quiet', '-q', default=False, action="store_true",
+        op.make_option('-q', dest="queit", default=False, action="store_true",
             help="Do not log messages to standard output."),
-        op.make_option('--silent', '-s', default=False, action="store_true",
+        op.make_option('-s', dest="silent", default=False, action="store_true",
             help="Supress more messages than quiet.")
     ]
 

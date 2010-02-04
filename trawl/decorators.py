@@ -6,19 +6,30 @@ from trawl.task import Task
 from trawl.filetask import FileTask, FileCreationTask
 from trawl.multitask import MultiTask
 
-__all__ = ["task", "deps", "file", "multitask", "ns"]
+__all__ = ["rule", "task", "build", "multitask", "ns"]
 
-FUNC_TYPES = (types.FunctionType, types.BuiltinFunctionType, types.LambdaType)
+FUNC_TYPES = (types.FunctionType, types.BuiltinFunctionType)
 METH_TYPES = (types.MethodType, types.BuiltinMethodType)
+LAMBDA_COUNT = 0
 def _get_name(func):
+    global LAMBDA_COUNT
     if isinstance(func, basestring):
         return func
-    elif isinstance(func, FUNC_TYPES):
-        return func.func_name
     elif isinstance(func, METH_TYPES):
         return func.im_func.func_name
+    elif isinstance(func, FUNC_TYPES):
+        if func.func_name == "<lambda>":
+            LAMBDA_COUNT += 1
+            return "<lambda>.%d" % LAMBDA_COUNT
+        return func.func_name
     else:
         raise TypeError("Unable to make a task from type: %s" % func.__class__)
+
+def rule(pattern, sources):
+    def _create_rule(func):
+        application.add_rule(pattern, sources, func)
+        return func
+    return _create_rule
 
 def task(*args, **kwargs):
     name = kwargs.get("name", None)
@@ -27,7 +38,7 @@ def task(*args, **kwargs):
     deps = kwargs.get("deps", None)
     
     if len(args) == 1 and isinstance(args[0], (list, tuple)):
-        deps = args[0]
+        deps = map(_get_name, args[0])
     elif len(args) == 1:
         if action is None and callable(args[0]):
             action = args[0]
@@ -40,16 +51,22 @@ def task(*args, **kwargs):
             name = _get_name(args[0])
         if deps is None and isinstance(args[1], (list, tuple)):
             deps = map(_get_name, args[1])
-    else:
+    elif len(args) != 0:
         raise TaskArgumentError()
 
-    if name is None: # Need to recurse
-        return lambda f: task(f, type=type, action=action, deps=deps)
+    try:
+        t = application.mgr.lookup(name)
+        t.enhance(deps=deps)
+    except KeyError:
+        pass
+
+    if action is None: # Need to recurse
+        return lambda f: task(f, type=type, name=name, deps=deps)
     
     application.mgr.add_task(type, name, action=action, deps=deps)
-    return func
+    return action
 
-def file(fname, *args, **kwargs):
+def build(fname, *args, **kwargs):
     type = FileTask if kwargs.get("recreate", True) else FileCreationTask
     task(*args, type=type, name=fname)
     def _create_task(func):
@@ -58,12 +75,6 @@ def file(fname, *args, **kwargs):
 
 def multitask(func):
     return task(func, type=MultiTask)
-
-def rule(pattern, sources):
-    def _create_rule(func):
-        application.add_rule(pattern, sources, func)
-        return func
-    return _create_rule
 
 class ns(object):
     def __init__(self, *args):
