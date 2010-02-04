@@ -7,10 +7,10 @@ from setuptools import setup, find_packages
 README = os.path.join(os.path.dirname(__file__), 'README.rst')
 
 setup(
-    name = 'belt',
+    name = 'Trawl',
     version = '0.1',
 
-    description = 'Framework for executing software pipelines.',
+    description = 'Python port of Ruby Rake',
     long_description = open(README).read(),
     author = 'Paul J. Davis',
     author_email = 'paul.joseph.davis@gmail.com',
@@ -30,7 +30,7 @@ setup(
     
     packages = find_packages(),
     include_package_data = True,
-    scripts = ['bin/belt'],
+    scripts = ['bin/trawl'],
     
     test_suite = 'nose.collector',
 )
