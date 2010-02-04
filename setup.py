@@ -15,7 +15,7 @@ setup(
     author = 'Paul J. Davis',
     author_email = 'paul.joseph.davis@gmail.com',
     license = 'MIT',
-    url = 'http://github.com/davisp/belt',
+    url = 'http://github.com/davisp/trawl',
 
     classifiers = [
         'Development Status :: 4 - Beta',

@@ -1,10 +1,10 @@
 
 import types
 
-from trowl.application import application
-from trowl.task import Task
-from trowl.filetask import FileTask, FileCreationTask
-from trowl.multitask import MultiTask
+from trawl.application import application
+from trawl.task import Task
+from trawl.filetask import FileTask, FileCreationTask
+from trawl.multitask import MultiTask
 
 __all__ = ["task", "deps", "file", "multitask", "ns"]
 

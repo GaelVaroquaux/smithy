@@ -22,17 +22,17 @@ def options():
         op.make_option('--deps', '-d', default=False, action="store_true",
             help="Display the tasks and dependencies, then exit."),
 
-        op.make_option('--trowlfile', '-f', default=None, meta="FILE"
-            help="Use FILE as the Trowlfile"),
-        op.make_option('--trowl-lib', '-T', default='trowllib', meta="DIR",
-            help="Auto-import any .trowl files in DIR. [Default %default]"),
+        op.make_option('--trawlfile', '-f', default=None, meta="FILE"
+            help="Use FILE as the Trawlfile"),
+        op.make_option('--trawl-lib', '-T', default='trawlers', meta="DIR",
+            help="Auto-import any .trawl files in DIR. [Default %default]"),
 
         op.make_option('--no-search', '-N', default=False, action='store_true',
-            help="Do not search parent directories for a Trowlfile"),
+            help="Do not search parent directories for a Trawlfile"),
         op.make_option('--system', '-g', default=None, meta="DIR",
-            help="Use a system (global) trowlfiles [Default ~/.trowl/*.trowl]"),
+            help="Use global trawler files. [Default ~/.trawl/*.trawl]"),
         op.make_option('--no-system', '-G', default=False, action="store_false",
-            help="Ignore system trowlfiles."),
+            help="Ignore system trawlers."),
         
         op.make_option('--rules', default=False, action="store_true",
             help="Trace rule resolution steps."),

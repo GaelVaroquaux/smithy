@@ -3,4 +3,4 @@
 import trawl.application
 
 if __name__ == '__main__':
-    trowel.application.main()
+    trawl.application.main()

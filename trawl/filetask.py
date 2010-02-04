@@ -1,6 +1,6 @@
 
-from trowl.const import EARLY
-from trowl.task import Task
+from trawl.const import EARLY
+from trawl.task import Task
 
 class FileTask(Task):
 
