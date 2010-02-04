@@ -1,0 +1,6 @@
+#! /usr/bin/env python
+
+import trowel.application
+
+if __name__ == '__main__':
+    trowel.application.main()
