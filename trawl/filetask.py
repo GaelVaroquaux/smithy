@@ -10,21 +10,21 @@ class FileTask(Task):
     def scope_name(scope, task_name):
         return task_name
     
+    @property
+    def as_source(self):
+        return self.name
+    
     def needed(self):
         if not os.path.exists(self.name):
             return True
-        return self._out_of_date(self.timestamp())
+        our_stamp = self.timestamp()
+        dep_stamps = map(lambda d: self.mgr.lookup(d).timestamp(), self.deps)
+        return any(map(lambda ds: ds > our_stamp, dep_stamps))
 
     def timestamp(self):
         if os.path.exists(self.name):
             return os.stat(self.name).st_mtime
         return EARLY
-    
-    def _out_of_date(self, stamp):
-        for p in self.prerequisites:
-            if p.timestamp() > stamp:
-                return True
-        return False
     
 class FileCreationTask(FileTask):
     

@@ -1,14 +1,18 @@
 
+class TaskArgumentError(Exception):
+    "Illformed task declaration"
+    pass
+
 class TaskNotFoundError(KeyError):
     def __init__(self, name):
         self.name = name
     def __str__(self):
         return "Task not found: %s" % self.name
 
-class TaskArgumentError(Exception):
-    "Illformed task declaration"
+class NoActionForTaskError(RuntimeError):
+    "No action can be found or created for a given task."
     pass
-    
+
 class DependencyCycleError(RuntimeError):
     "Cyclic invocation chain."
     def __init__(self, name):

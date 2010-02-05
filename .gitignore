@@ -1,4 +1,4 @@
 *.pyc
 Trawl.egg-info/
 build/
-tests/data/tmp/
+tests/data/

@@ -9,16 +9,28 @@ from trawl.application import application as app
 from trawl.decorators import *
 from trawl.exceptions import *
 
-def tmpfname():
-    base = os.path.join(os.path.dirname(__file__), "data", "tmp")
-    if not os.path.isdir(base):
-        os.makedirs(base)
-    return os.path.join(base, uuid.uuid4().hex.upper())
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+
+def tmpfname(name=None):
+    if not os.path.isdir(DATA_DIR):
+        os.makedirs(DATA_DIR)
+    if name is None:
+        name = uuid.uuid4().hex.upper()
+    return os.path.join(DATA_DIR, name)
 
 def test(func):
     def _f(*args, **kwargs):
+        # Reset the internal state before each test.
         app.clear(tasks=True)
         func(*args, **kwargs)
+        # Remove any temporary files. If the test
+        # raised an exception the files are left
+        # so they can help in debugging.
+        for fname in os.listdir(DATA_DIR):
+            try:
+                os.remove(fname)
+            except OSError:
+                pass
     _f.func_name = func.func_name
     return _f
 

@@ -34,6 +34,14 @@ class Task(object):
         if len(self.sources):
             return self.sources[0]
         return None
+    
+    @property
+    def as_source(self):
+        """\
+        Return the source representation of this task. Mostly meant for
+        FileTasks to return the filename they are expected to produce.
+        """
+        return None
 
     def clear(self):
         "Clear the existing prerequisites and actions of this task."
@@ -60,6 +68,7 @@ class Task(object):
         self.app.trace("** Execute %s" % self.name)
         if not len(self.actions):
             self.mgr.add_from_rule(self.name)
+        self.sources = self._get_sources()
         for act in self.actions:
             if act.func_code.co_argcount == 0:
                 ret = act()
@@ -107,11 +116,16 @@ class Task(object):
     def _invoke_deps(self, args, chain):
         self.app.trace("** Deps: %s" % ', '.join(self.deps))
         def _invoke_dep(p):
-            prereq = self.mgr.lookup(p, self.scope)
+            prereq = self.mgr.find(p, self.scope)
             #prereq_args = args.new_scope(prereq.arg_names)
             prereq._invoke(args, chain)
         map(_invoke_dep, self.deps)
 
+    def _get_sources(self):
+        tasks = map(lambda d: self.mgr.lookup(d, self.scope), self.deps)
+        tasks = filter(lambda t: t.as_source, tasks)
+        return map(lambda t: t.name, tasks)                
+            
     def _trace_info(self):
         "Format trace flags for display."
         flags = []

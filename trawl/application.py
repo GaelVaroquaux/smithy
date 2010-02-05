@@ -1,6 +1,7 @@
 
 import optparse as op
 
+from trawl.exceptions import TaskNotFoundError, NoActionForTaskError
 from trawl.taskmanager import TaskManager
 
 __usage__ = "[OPTIONS] task1 [task2 ...]"
@@ -23,10 +24,19 @@ class Application(object):
         self.setup()
         
         for t in tasks:
-            self.mgr.lookup(t).invoke()
+            try:
+                task = self.mgr.find(t)
+            except NoActionForTaskError:
+                raise TaskNotFoundError(t)
+            if task is None:
+                raise TaskNotFoundError(t)
+            task.invoke()
 
     def setup(self):
         pass
+
+    def rule_depth(self):
+        return getattr(self.opts, "rule_depth", 32)
 
     def log_output(self, task, rval):
         self._dbg.append((task, rval))
@@ -48,6 +58,8 @@ def options():
             help="List the tasks matching PATTERN, then exit."),
         op.make_option('-d', dest="do_deps", default=False, action="store_true",
             help="Display the tasks and dependencies, then exit."),
+        op.make_option('-D', dest='rule_depth', default=32, type='int',
+            help="Maximum recursion depth for rule resolution."),
 
         op.make_option('-f', dest="trawlfile", default=None, metavar="FILE",
             help="Use FILE as the Trawlfile"),

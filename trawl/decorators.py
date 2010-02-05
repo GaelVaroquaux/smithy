@@ -27,7 +27,7 @@ def _get_name(func):
 
 def rule(pattern, sources):
     def _create_rule(func):
-        application.add_rule(pattern, sources, func)
+        application.mgr.add_rule(pattern, sources, func)
         return func
     return _create_rule
 
@@ -37,7 +37,7 @@ def task(*args, **kwargs):
     action = kwargs.get("action", None)
     deps = kwargs.get("deps", None)
     
-    if len(args) == 1 and isinstance(args[0], (list, tuple)):
+    if len(args) == 1 and isinstance(args[0], (list, tuple)) and deps is None:
         deps = map(_get_name, args[0])
     elif len(args) == 1:
         if action is None and callable(args[0]):
@@ -54,11 +54,10 @@ def task(*args, **kwargs):
     elif len(args) != 0:
         raise TaskArgumentError()
 
-    try:
+    if name is not None:
         t = application.mgr.lookup(name)
-        t.enhance(deps=deps)
-    except KeyError:
-        pass
+        if t is not None:
+            t.enhance(deps=deps)
 
     if action is None: # Need to recurse
         return lambda f: task(f, type=type, name=name, deps=deps)
@@ -68,10 +67,7 @@ def task(*args, **kwargs):
 
 def build(fname, *args, **kwargs):
     type = FileTask if kwargs.get("recreate", True) else FileCreationTask
-    task(*args, type=type, name=fname)
-    def _create_task(func):
-        return task(func, type=type, name=fname)
-    return _create_task
+    return task(*args, type=type, name=fname)
 
 def multitask(func):
     return task(func, type=MultiTask)
@@ -84,5 +80,5 @@ class ns(object):
         map(application.mgr.push_scope, self.scopes)
         return self
 
-    def __exit__(self):
+    def __exit__(self, type, value, traceback):
         map(application.mgr.pop_scope, reversed(self.scopes))
