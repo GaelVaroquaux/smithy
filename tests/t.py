@@ -23,12 +23,9 @@ def test(func):
         # Reset the internal state before each test.
         app.clear(tasks=True)
         func(*args, **kwargs)
-        # Remove any temporary files. If the test
-        # raised an exception the files are left
-        # so they can help in debugging.
         for fname in os.listdir(DATA_DIR):
             try:
-                os.remove(fname)
+                os.remove(os.path.join(DATA_DIR, fname))
             except OSError:
                 pass
     _f.func_name = func.func_name
