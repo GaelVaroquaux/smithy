@@ -85,6 +85,9 @@ The last major bit is in defining rules:
     def link(task):
         subprocess.check_call(["gcc", "-o", task.name] + task.sources)
 
+    # Add a helpful handle for running
+    task("run", ["appname"])
+
 TODO
 ++++
 
