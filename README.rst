@@ -1,82 +1,96 @@
-Belt - Tools for sotware pipelines
-==================================
+Trawl - Another tool in the shed
+================================
 
-Tasks
-  - Have dependencies
-    * Syntax?
-  - Adding actions
-    * Named?
-  - Arguments
-    * From signature
+This is as straight of a clone of Rake that I could come up with.
 
-@task
-def mytask(t):
-    print "First task!"
+Briefly:
+::
 
-@task(["othertask", "secondtask"])
-def secondtask(t):
-    print "Run this after my task."
+    # Trawlfile
+    @task
+    def bar():
+        print "BAR!"
 
-task(secondtask, ["foo", "bar"])
+Does as you might expect:
+::
 
-@task
-def third(t):
-    print "Decorated to be runnable."
+    $ trawl -T
+    bar
+    $ trawl bar
+    ** Execute bar
+    BAR
 
-@file("foo/bar.py", [third])
-def make_bar(t):
-    print "Should create a file: %s" % t.target
+And with dependencies:
+::
 
-@multitask(["third", "secondtask", "mytask"])
-def inparallel(t):
-    print "Hello there govenor!"
+    # Trawlfile
+    @task
+    def bar():
+        print "BAR!"
 
-with ns("foo", "baz", "bing"): # or, with ns("foo"), ns("baz"), ns("bing")
-  
-  @task
-  def bar(t):
-      print "This is task: %s" % t.name # "foo:bar"
+    @task([bar])
+    def foo():
+        print "FOO!"
 
-# Implementation
+Also does what you'd expect:
+::
 
-def task(func=None, type=None, name=None):
-    if not func:
-        def _create_task(func):
-            return task(func, type=type, name=name)
-        return _create_task
+    $ trawl -T
+    bar
+    foo
+    $ trawl bar
+    ** Execute bar
+    BAR!
+    $ trawl foo
+    ** Execute bar
+    BAR!
+    ** Execute foo
+    FOO!
 
-    type = type or Task
-    name = name or get_name(func)
-    prereqs = getattr(func, "__prereqs__", [])
-    func.__task__ = register_task(type, name, func, prereqs)
-    return func
+Which is awesome sauce, but what about files?
+::
 
-def file(fname, recreate=True):
-    type = FileTask if recreate else FileCreationTask
-    def _create_task(func):
-        return task(func, type=type, name=fname)
-    return _create_task
+    # Trawlfile
+    @build("myfile.txt", recreate=False)
+    def run(task):
+        with open(task.name) as out:
+            out.write("MUNCTIONAL!")
 
-def multitask(func):
-    return task(func, type=MultiTask)
+    @build("yup.cfg", ["myfile.txt"])
+    def more(task):
+        with open(task.name) as out:
+            with open(task.source) as src:
+                out.write(src.read() + "!!!1!")
 
-def deps(*args):
-    prereqs = [lookup_task(a) for a in args]
-    def _add_deps(func):
-        if hasattr(func.__task__):
-            func.__task__.add_prereqs(prereqs)
-        else:
-            func.__prereqs__ = prereqs
-        return func
+Will cause "myfile.txt" to be created but not overwritten if it exists.
+"yup.cfg" will then only be rebuilt when "myfile.txt" changes as determined by
+the file's mtime:
+::
 
-class Namespace(object):
-    def __init__(self, *args):
-        self.scope = map(str, args)
-    
-    def __enter__(self):
-        push_scope(self.scope)
-    
-    def __exit__(self):
-        pop_scope()
+    $ trawl yup.cfg
+    ** Execute myfile.txt
+    ** Execute yup.cfg
+    $ trawl yup.cfg
+    $
 
-ns = Namespace
+The last major bit is in defining rules:
+::
+
+    @rule('.o', '.c'):
+    def compile(task):
+        subprocess.check_call(["gcc", "-o", task.name, "-c", task.source])
+        
+    objects = FileList("*.c").sub(".c$", ".o")
+    @build("appname", objects)
+    def link(task):
+        subprocess.check_call(["gcc", "-o", task.name] + task.sources)
+
+TODO
+++++
+
+Some things that need to be done yet:
+
+* Task descriptions
+* Argument support
+* Test and add methods to FileList
+

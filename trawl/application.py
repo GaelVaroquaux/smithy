@@ -5,6 +5,7 @@ import os
 import re
 import sys
 
+from trawl.filelist import FileList
 from trawl.taskmanager import TaskManager
 import trawl.exceptions as exc
 
@@ -70,6 +71,7 @@ class Application(object):
         import trawl.decorators as dec
         return {
             "__file__": fname,
+            "FileList": FileList,
             "task": dec.task,
             "rule": dec.rule,
             "build": dec.build,
