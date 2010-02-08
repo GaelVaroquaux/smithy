@@ -1,4 +1,5 @@
 *.pyc
 Trawl.egg-info/
 build/
+dist/
 tests/data/

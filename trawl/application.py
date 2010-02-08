@@ -16,6 +16,7 @@ class Application(object):
         self.mgr = TaskManager(self)
         self.opts = None
         self.globals = {}
+        self.required_files = []
         self.args = []
         self._dbg = []
 
@@ -53,6 +54,11 @@ class Application(object):
             sys.path.insert(0, dn)
         # Load the main file.
         self.load_file(self.find_trawlfile())
+        # Load files that were required
+        while len(self.required_files):
+            required = self.required_files[:]
+            self.required_files = []
+            map(self.load_files, required)
         # Load system and library tasks
         if self.opts.incsys:
             for fn in glob.glob(self.opts.sysglob):
@@ -72,6 +78,7 @@ class Application(object):
         return {
             "__file__": fname,
             "FileList": FileList,
+            "require": self.require,
             "task": dec.task,
             "rule": dec.rule,
             "build": dec.build,
@@ -102,6 +109,9 @@ class Application(object):
                 updir = upupdir
         
         raise exc.NoTrawlfileError()
+    
+    def require(self, filename):
+        self.required_files.append(filename)            
     
     def display_tasks(self, patterns):
         names = sorted(self.mgr.tasks.keys())
