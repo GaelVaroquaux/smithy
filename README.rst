@@ -96,4 +96,5 @@ Some things that need to be done yet:
 * Task descriptions
 * Argument support
 * Test and add methods to FileList
+* Add a function to import tasks programatically
 
