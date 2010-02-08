@@ -2,10 +2,11 @@
 import glob
 import optparse as op
 import os
+import re
 import sys
 
-from trawl.exceptions import TaskNotFoundError, NoActionForTaskError
 from trawl.taskmanager import TaskManager
+import trawl.exceptions as exc
 
 __usage__ = "[OPTIONS] task1 [task2 ...]"
 
@@ -13,6 +14,7 @@ class Application(object):
     def __init__(self):
         self.mgr = TaskManager(self)
         self.opts = None
+        self.globals = {}
         self.args = []
         self._dbg = []
 
@@ -27,24 +29,55 @@ class Application(object):
         
         if self.opts:
             self.load()
+            if self.opts.list:
+                self.display_tasks(tasks)
+                exit(0)
+
+        if len(tasks) == 0:
+            print "No task specified."
+            exit(0)
 
         for t in tasks:
             try:
                 task = self.mgr.find(t)
-            except NoActionForTaskError:
-                raise TaskNotFoundError(t)
+            except exc.NoActionForTaskError:
+                raise exc.TaskNotFoundError(t)
             if task is None:
-                raise TaskNotFoundError(t)
+                raise exc.TaskNotFoundError(t)
             task.invoke()
 
     def load(self):
-        load_list = self.find_trawlfiles()
-        if len(load_list) == 0:
-            self.error("No Trawlfiles found!")
-            sys.exit(1)
-        print load_list
+        # Add Python paths
+        for dn in self.opts.incdirs:
+            sys.path.insert(0, dn)
+        # Load the main file.
+        self.load_file(self.find_trawlfile())
+        # Load system and library tasks
+        if self.opts.incsys:
+            for fn in glob.glob(self.opts.sysglob):
+                self.load_file(fn)
+        for fn in glob.glob(self.opts.libglob):
+            self.load_file(fn)
 
-    def find_trawlfiles(self):
+    def load_file(self, fname):
+        self.globals[fname] = self.init_globals(fname)
+        with open(fname) as handle:
+            src = handle.read()
+        code = compile(src, fname, 'exec')
+        exec code in self.globals[fname]
+    
+    def init_globals(self, fname):
+        import trawl.decorators as dec
+        return {
+            "__file__": fname,
+            "task": dec.task,
+            "rule": dec.rule,
+            "build": dec.build,
+            "multitask": dec.multitask,
+            "ns": dec.ns
+        }
+
+    def find_trawlfile(self):
         TRAWL_FILES = "Trawlfile trawlfile Trawfile.py trawfile.py".split()
         load_list = []
         
@@ -53,8 +86,7 @@ class Application(object):
             TRAWL_FILES = [self.opts.trawlfile]
         for tf in TRAWL_FILES:
             if os.path.isfile(tf):
-                load_list.append(tf)
-                break
+                return tf
 
         # Try searching upwards for the main Trawfile
         if not len(load_list) and self.opts.srchup:
@@ -62,44 +94,50 @@ class Application(object):
             while updir and not len(load_list):
                 for tf in TRAWL_FILES:
                     if os.path.exists(os.path.join(updir, tf)):
-                        load_list.append(tf)
-                        break
+                        return tf
                 (upupdir, ignore) = os.path.split(updir)
                 if upupdir == updir: break
                 updir = upupdir
-
-        assert len(load_list) < 2, "Multiple main Trawlfiles: %s" % load_list
-
-        # Main Trawler found, go to its directory
-        if len(load_list) == 1:
-            dname = os.path.dirname(load_list[0])
-            if dname: os.chdir(dname)
-
-        # Load system Trawlfiles
-        if self.opts.incsys:
-            for fn in glob.glob(self.opts.sysglob):
-                load_files.append(fn)
         
-        # Load other files
-        for fn in glob.glob(self.opts.libglob):
-            load_files.append(fn)
-            
-        return load_list
+        raise exc.NoTrawlfileError()
+    
+    def display_tasks(self, patterns):
+        names = sorted(self.mgr.tasks.keys())
+        if len(patterns):
+            patterns = map(re.compile, patterns)
+            for name in names:
+                if any(map(lambda p: p.search(name), patterns)):
+                    print repr(self.mgr.tasks[name])
+        else:
+            for name in names:
+                print repr(self.mgr.tasks[name])
+
+    def is_dry_run(self):
+        return getattr(self.opts, "dryrun", False)
 
     def rule_depth(self):
         return getattr(self.opts, "rule_depth", 32)
 
     def log_output(self, task, rval):
+        "For debugging task execution in tests."
         self._dbg.append((task, rval))
 
-    def is_dry_run(self):
-        return getattr(self.opts, "dryrun", False)
+    def trace(self, mesg):
+        # Weird logic to let tests trace with no opts
+        if self.opts and not self.opts.trace:
+            return
+        self.log(mesg)
     
-    def error(self, mesg):
-        sys.stderr.write("%s\n" % mesg)
+    def log(self, mesg):
+        # Weird logic to let tests log with no opts
+        if self.opts and not self.opts.verbose:
+            return
+        # Let nosetests capture output.
+        if not self.opts:
+            sys.stdout.write("%s\n" % mesg)
+        else:
+            sys.stderr.write("%s\n" % mesg)
     
-    def trace(self, mesg, is_rule=False):
-        print mesg
 
 application = Application()
 
@@ -108,7 +146,8 @@ def options():
         op.make_option('-n', dest="dryrun", default=False, action="store_true",
             help="Do a dry run without executing actions."),
 
-        op.make_option('-T', dest="task_list", default=None, metavar="PATTERN",
+        op.make_option('-T', dest="list", default=False, action='store_true',
+            metavar="PATTERN",
             help="List the tasks matching PATTERN, then exit."),
         op.make_option('-d', dest="do_deps", default=False, action="store_true",
             help="Display the tasks and dependencies, then exit."),
@@ -130,24 +169,24 @@ def options():
             metavar="GLOB",
             help="Import local trawlfiles. [Default %default]"),
 
-        op.make_option('-I', dest="incdir", default=[], action="append",
+        op.make_option('-I', dest="incdirs", default=[], action="append",
             metavar="DIR", help="Add DIR to the PYTHONPATH"),
-        
-        op.make_option('-r', dest="rules", default=False, action="store_true",
-            help="Trace rule resolution steps."),
+
         op.make_option('-t', dest="trace", default=False, action="store_true",
-            help="Turn on task execution tracing."),
-        op.make_option('-v', dest="verbose", default=False, action="store_true",
-            help="Log messages to standard output."),
-        op.make_option('-q', dest="queit", default=False, action="store_true",
-            help="Do not log messages to standard output."),
-        op.make_option('-s', dest="silent", default=False, action="store_true",
-            help="Supress more messages than quiet.")
+            help="Enable task execution tracing."),
+        op.make_option('-v', dest="verbose", default=True, action="store_true",
+            help="Display log message on stderr."),
+        op.make_option('-q', dest="verbose", action="store_false",
+            help="Do not display log message on stderr.")
     ]
 
 def main():
     global application
     parser = op.OptionParser(usage=__usage__, option_list=options())
     opts, args = parser.parse_args()
-    application.run(opts, args)
+    try:
+        application.run(opts, args)
+    except exc.TrawlError, e:
+        print str(e)
+
 

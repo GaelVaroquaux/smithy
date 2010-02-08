@@ -63,9 +63,9 @@ class Task(object):
         "Execute the actions associated with this task."
         args = args or tuple() #TaskArgs.EMPTY
         if self.app.is_dry_run():
-            print "** Execute (dry run) %s" % self.name
+            self.app.log("** Execute (dry run) %s" % self.name)
             return
-        self.app.trace("** Execute %s" % self.name)
+        self.app.log("** Execute %s" % self.name)
         if not len(self.actions):
             self.mgr.add_from_rule(self.name)
         self.sources = self._get_sources()
@@ -103,7 +103,6 @@ class Task(object):
     
     def _invoke(self, args, chain):
         chain = InvocationChain(chain, self)
-        self.app.trace("** Chain: %s" % chain)
         with self.lock:
             self.app.trace("** Invoke %s %s" % (self.name, self._trace_info()))
             if self.already_invoked:
@@ -114,7 +113,7 @@ class Task(object):
                 self.execute(args)
     
     def _invoke_deps(self, args, chain):
-        self.app.trace("** Deps: %s" % ', '.join(self.deps))
+        self.app.trace("** Deps: [%s]" % ', '.join(self.deps))
         def _invoke_dep(p):
             prereq = self.mgr.find(p, self.scope)
             #prereq_args = args.new_scope(prereq.arg_names)
