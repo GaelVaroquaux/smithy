@@ -53,12 +53,18 @@ class Application(object):
         for dn in self.opts.incdirs:
             sys.path.insert(0, dn)
         # Load the main file.
-        self.load_file(self.find_trawlfile())
+        maintrawl = self.find_trawlfile()
+        # Jump to the directory we're running from.
+        self.workdir = os.path.dirname(maintrawl)
+        if self.workdir != os.getcwd():
+            os.chdir(self.workdir)
+            sys.path.insert(0, self.workdir)
+        self.load_file(maintrawl)
         # Load files that were required
         while len(self.required_files):
             required = self.required_files[:]
             self.required_files = []
-            map(self.load_files, required)
+            map(self.load_file, required)
         # Load system and library tasks
         if self.opts.incsys:
             for fn in glob.glob(self.opts.sysglob):
@@ -101,8 +107,10 @@ class Application(object):
         if not len(load_list) and self.opts.srchup:
             (updir, ignore) = os.path.split(os.getcwd())
             while updir and not len(load_list):
+                print updir
                 for tf in TRAWL_FILES:
-                    if os.path.exists(os.path.join(updir, tf)):
+                    tf = os.path.join(updir, tf)
+                    if os.path.exists(tf):
                         return tf
                 (upupdir, ignore) = os.path.split(updir)
                 if upupdir == updir: break
@@ -119,10 +127,10 @@ class Application(object):
             patterns = map(re.compile, patterns)
             for name in names:
                 if any(map(lambda p: p.search(name), patterns)):
-                    print repr(self.mgr.tasks[name])
+                    print str(self.mgr.tasks[name])
         else:
             for name in names:
-                print repr(self.mgr.tasks[name])
+                print str(self.mgr.tasks[name])
 
     def is_dry_run(self):
         return getattr(self.opts, "dryrun", False)

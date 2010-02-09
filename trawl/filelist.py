@@ -5,7 +5,7 @@ import os
 import re
 
 def _exclude_cores(fn):
-    return fn.search(r"(^|[\/\\])core$", fn) and not os.path.isdir(fn)
+    return re.search(r"(^|[\/\\])core$", fn) and not os.path.isdir(fn)
 
 class FileList(object):
     """\
@@ -53,9 +53,9 @@ class FileList(object):
         """
         self.pending_add = []
         self.pending = False
-        self.exclude_patterns = self.DEFAULT_IGNORE_PATTERNS[:]
-        self.exclude_funcs = self.DEFAULT_IGNORE_FUNCS[:]
-        self.exclude_exps = None
+        self.exclude_patterns = self.DEFAULT_EXCLUDE_PATTERNS[:]
+        self.exclude_funcs = self.DEFAULT_EXCLUDE_FUNCS[:]
+        self.exclude_regexps = []
         self.items = []
         map(self.include, patterns)
     
@@ -80,7 +80,7 @@ class FileList(object):
 
         Triggers name resolution. (Obviously...)
         """
-        self.resolve(self)
+        self.resolve()
         return self.items
 
     def include(self, *patterns):
@@ -93,7 +93,7 @@ class FileList(object):
           file_list.include("math.c lib.h *.o".split())
         """
         for p in patterns:
-            if isisntance(p, basestring):
+            if isinstance(p, basestring):
                 self.pending_add.append(p)
             else:
                 map(self.include, p)
@@ -127,7 +127,7 @@ class FileList(object):
             else:
                 map(self.exclude, p)
         if not self.pending:
-            self.resolve_excludes()
+            self._resolve_excludes()
         return self
     
     def exclude_re(self, *patterns):
@@ -154,7 +154,7 @@ class FileList(object):
             else:
                 map(self.exclude_reg, p)
         if not self.pending:
-            self.resolve_excludes()
+            self._resolve_excludes()
         return self
     
     def clear_exclude(self):
@@ -170,9 +170,9 @@ class FileList(object):
         if self.pending:
             self.pending = False
             for fn in self.pending_add:
-                self.resolve_add(fn)
+                self._resolve_add(fn)
             self.pending_add = []
-            self.resolve_exclude()
+            self._resolve_exclude()
         return self
     
     def calculate_exclude_regexp(self):
@@ -182,9 +182,9 @@ class FileList(object):
                 self.exclude_exps.append(e)
             elif re.search(r"[*?]", e):
                 for fn in glob.glob(e):
-                    ignores.append(re.compile(fn))
+                    self.exclude_exps.append(re.compile(fn))
             else:
-                ignores.append(re.compile(e))
+                self.exclude_exps.append(re.compile(e))
     
     def _resolve_add(self, fn):
         if re.search(r"[*?\[\{]", fn):
@@ -195,7 +195,7 @@ class FileList(object):
     def _resolve_exclude(self):
         self.calculate_exclude_regexp()
         def _filt(fn):
-            return not self.exclude_regexp.search(fn)
+            return not any(map(lambda p: p.search(fn), self.exclude_regexps))
         self.items = filter(_filt, self.items)
 
     def sub(self, pattern, repl):
@@ -224,8 +224,8 @@ class FileList(object):
 
     def exclude(self, fn):
         "Should the given filename be excluded?"
-        if not self.exclude_exps:
+        if not self.exclude_regexps:
             self.calculate_exclude_regexp()
-        if any(r.search(r) for r in self.exclude_exps):
+        if any(r.search(fn) for r in self.exclude_exps):
             return True
         return any(func(fn) for func in self.exclude_funcs)

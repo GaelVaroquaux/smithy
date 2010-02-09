@@ -18,7 +18,7 @@ class FileTask(Task):
         if not os.path.exists(self.name):
             return True
         our_stamp = self.timestamp()
-        dep_stamps = map(lambda d: self.mgr.lookup(d).timestamp(), self.deps)
+        dep_stamps = map(lambda d: self.mgr.find(d).timestamp(), self.deps)
         return any(map(lambda ds: ds > our_stamp, dep_stamps))
 
     def timestamp(self):
@@ -32,5 +32,7 @@ class FileCreationTask(FileTask):
         return not os.path.exists(self.name)
     
     def timestamp(self):
+        if os.path.exists(self.name):
+            return os.stat(self.name).st_mtime
         return EARLY
 

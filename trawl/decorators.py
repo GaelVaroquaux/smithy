@@ -54,11 +54,13 @@ def task(*args, **kwargs):
     elif len(args) != 0:
         raise TaskArgumentError()
 
-    if name is not None:
+    if type is not None and name is not None:
         t = application.mgr.lookup(name)
-        if t is not None:
+        if t is None:
+            application.mgr.add_task(type, name, deps=deps)
+        elif deps is not None:
             t.enhance(deps=deps)
-
+    
     if action is None: # Need to recurse
         return lambda f: task(f, type=type, name=name, deps=deps)
     

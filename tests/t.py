@@ -23,6 +23,8 @@ def test(func):
         # Reset the internal state before each test.
         app.clear(tasks=True)
         func(*args, **kwargs)
+        if not os.path.isdir(DATA_DIR):
+            return
         for fname in os.listdir(DATA_DIR):
             try:
                 os.remove(os.path.join(DATA_DIR, fname))
