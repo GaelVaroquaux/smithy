@@ -73,6 +73,13 @@ _textmode = 'r'
 if hasattr(file, 'newlines'):
     _textmode = 'U'
 
+def aspath(obj):
+    if isinstance(obj, path):
+        return obj
+    elif isinstance(obj, basestring):
+        return path(obj)
+    else:
+        raise TypeError("Can't convert %r to a path instance." % obj)
 
 class TreeWalkWarning(Warning):
     pass

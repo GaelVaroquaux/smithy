@@ -1,6 +1,7 @@
 # Copyright 2009 Paul J. Davis <paul.joseph.davis@gmail.com>
 #
 # This file is part of the Trawl package released under the MIT license.
+import functools
 import os
 import unittest
 import uuid
@@ -8,31 +9,50 @@ import uuid
 from trawl.application import application as app
 from trawl.decorators import *
 from trawl.exceptions import *
+from trawl.filelist import FileList, FileListIter
+from trawl.path import aspath, path
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+DATA_DIR = path(__file__).parent / "data"
+
+FILE_PATHS = map(path, """
+    CVS .svn .git .dummy x.bak x x~ core x.c xyz.c abc.c abc.h abc.x existing
+""".split())
 
 def tmpfname(name=None):
-    if not os.path.isdir(DATA_DIR):
-        os.makedirs(DATA_DIR)
+    if not DATA_DIR.isdir():
+        DATA_DIR.makedirs()
     if name is None:
         name = uuid.uuid4().hex.upper()
-    return os.path.join(DATA_DIR, name)
+    return DATA_DIR / name
 
 def test(func):
+    @functools.wraps(func)
     def _f(*args, **kwargs):
         # Reset the internal state before each test.
         app.clear(tasks=True)
         func(*args, **kwargs)
-        if not os.path.isdir(DATA_DIR):
-            return
-        for fname in os.listdir(DATA_DIR):
-            try:
-                os.remove(os.path.join(DATA_DIR, fname))
-            except OSError:
-                pass
-    _f.func_name = func.func_name
+        if DATA_DIR.isdir():
+            DATA_DIR.rmtree()
     return _f
 
+def filetest(func):
+    @functools.wraps(func)
+    def _f(*args, **kwargs):
+        for p in FILE_PATHS:
+            p = DATA_DIR / "lists" / p
+            if not p.parent.isdir():
+                p.parent.makedirs()
+            p.touch()
+        cwd = path.getcwd()
+        try:
+            os.chdir(DATA_DIR/"lists")
+            func(*args, **kwargs)
+        finally:
+            os.chdir(cwd)
+        if DATA_DIR.isdir():
+            DATA_DIR.rmtree()
+    return _f
+            
 def eq(a, b):
     assert a == b, "%r != %r" % (a, b)
 
@@ -61,12 +81,11 @@ def raises(exctype, func, *args, **kwargs):
     try:
         func(*args, **kwargs)
     except exctype, inst:
-        pass
-    else:
-        func_name = getattr(func, "func_name", "<builtin_function>")
-        raise AssertionError("Function %s did not raise %s" % (
-            func_name, exctype.__name__))
+        return
+    func_name = getattr(func, "func_name", "<builtin_function>")
+    mesg = "Function %s did not raise %s" % (func_name, exctype.__name__)
+    raise AssertionError(mesg)
 
-def is_js_object(obj):
-    assert isinstance(obj, spidermonkey.Object), \
-            "%r is not an instance of spdermonkey.Object." % obj
+def isinstance(obj, type):
+    func = __builtins__["isinstance"]
+    assert func(obj, type), "%r is not an instance of %r." % (obj, type)

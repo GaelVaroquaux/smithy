@@ -1,11 +1,20 @@
 
 import copy
+import functools
 import glob
 import os
 import re
 
+from trawl.path import aspath, path
+
 def _exclude_cores(fn):
     return re.search(r"(^|[\/\\])core$", fn) and not os.path.isdir(fn)
+
+class FileListIter(object):
+    def __init__(self, source):
+        self.source = source
+    def next(self):
+        return aspath(self.source.next())
 
 class FileList(object):
     """\
@@ -18,13 +27,7 @@ class FileList(object):
     
     This allows us to define a number of patterns to match any number of
     files, but only search out the actual files when the FileList itself
-    is actually used. Methods that trigger the resolution to file names are
-    documented as such.
-    
-    Notable special methods that trigger name resolution are:
-        `__str__`
-        `__eq__`
-        `__iter__`
+    is actually used.
     """
     
     DEFAULT_EXCLUDE_PATTERNS = [
@@ -35,10 +38,11 @@ class FileList(object):
         re.compile(r"\.bak$"),
         re.compile(r"~$")
     ]
+    
     DEFAULT_EXCLUDE_FUNCS = [
         _exclude_cores
     ]
-            
+    
     def __init__(self, *patterns):
         """\
         Create a FileList from the provided globbable patterns. If you
@@ -51,37 +55,211 @@ class FileList(object):
           pkg_files = FileList("lib/**/*").exclude_re(r"\bCVS\b")
                         .exclude_re(r"\b.git\b").exclude_re("\b.svn\b")
         """
-        self.pending_add = []
-        self.pending = False
-        self.exclude_patterns = self.DEFAULT_EXCLUDE_PATTERNS[:]
-        self.exclude_funcs = self.DEFAULT_EXCLUDE_FUNCS[:]
-        self.exclude_regexps = []
-        self.items = []
-        map(self.include, patterns)
+        if len(patterns) == 1 and isinstance(patterns[0], FileList):
+            other = patterns[0]
+            self._items = copy.copy(other._items)
+            self._pending_add = copy.copy(other._pending_add)
+            self._pending = other._pending
+            self._exclude_patterns = copy.copy(other._exclude_patterns)
+            self._exclude_funcs = copy.copy(other._exclude_funcs)
+            self._exclude_regexps = copy.copy(other._exclude_regexps)
+        else:
+            self._items = []
+            self._pending_add = []
+            self._pending = False
+            self._exclude_patterns = FileList.DEFAULT_EXCLUDE_PATTERNS[:]
+            self._exclude_funcs = FileList.DEFAULT_EXCLUDE_FUNCS[:]
+            self._exclude_regexps = []
+            map(self.include, patterns)
+    
+    # Not hashable
+    
+    __hash__ = None
+    
+    # Printing functions
     
     def __str__(self):
         self.resolve()
-        return ' '.join(self.items)
+        return '[%s]' % ', '.join(map(str, self))
     
-    def __eq__(self, other):
-        return self.as_array() == other.as_array()
+    def __repr__(self):
+        return "<FileList %s>" % str(self)
+    
+    # Binary operator methods
+    
+    def __add__(self, other):
+        print "Adding: %r" % other
+        if not isinstance(other, (list, FileList)):
+            return NotImplemented
+        elif isinstance(other, FileList):
+            self.resolve()
+            other.resolve()
+            self._items += map(aspath, other._items)
+        else:
+            self.resolve()
+            self._items += map(aspath, other)
+        return self
+    
+    def __radd__(self, other):
+        if not isinstance(other, (list, FileList)):
+            return NotImplemented
+        elif isinstance(other, FileList):
+            self.resolve()
+            other.resolve
+            self._items = other._items + self._items
+        else:
+            self.resolve()
+            self._items = map(aspath, other) + self._items
+        return self
+
+    # Container Methods
+
+    def __len__(self):
+        self.resolve()
+        return len(self._items)
 
     def __iter__(self):
         self.resolve()
-        return iter(self.items)
+        return FileListIter(iter(self._items))
+
+    def __getitem__(self, item):
+        self.resolve()
+        if not isinstance(item, slice):
+            return aspath(self._items[item])
+        ret = FileList(self)
+        ret._items = self._items[item]
+        return ret
+
+    def __setitem__(self, item, value):
+        self.resolve()
+        if not isinstance(item, slice):
+            self._items[item] = aspath(value)
+        elif isinstance(value, list):
+            self._items[item] = map(aspath, value)
+        elif isinstance(value, FileList):
+            value.resolve()
+            self._items[item] = value._items
+        else:
+            raise TypeError("%r is not an instance of list or FileList")
+
+    def __delitem__(self, item):
+        self.resolve()
+        del self._items[item]
+
+    def __contains__(self, item):
+        self.resolve()
+        return aspath(item) in self._items
+    
+    # Comparison functions
+    
+    def __lt__(self, other):
+        if isinstance(other, FileList):
+            self.resolve()
+            other.resolve()
+            return self._items < other._items
+        elif isinstance(other, list):
+            self.resolve()
+            return self._items < other
+        return NotImplemented
+    
+    def __le__(self, other):
+        if isinstance(other, FileList):
+            self.resolve()
+            other.resolve()
+            return self._items <= other._items
+        elif isinstance(other, list):
+            self.resolve()
+            return self._items <= other
+        return NotImplemented
+    
+    def __eq__(self, other):
+        if isinstance(other, FileList): 
+            self.resolve()
+            other.resolve()
+            return self._items == other._items
+        elif isinstance(other, list):
+            self.resolve()
+            return self._items == other
+        return NotImplemented
+    
+    def __ne__(self, other):
+        if isinstance(other, FileList):
+            self.resolve()
+            other.resolve()
+            return self._items != other._items
+        elif isinstance(other, list):
+            self.resolve()
+            return self._items != other
+        return NotImplemented
+    
+    def __ge__(self, other):
+        if isinstance(other, FileList):
+            self.resolve()
+            other.resolve()
+            return self._items >= other._items
+        elif isinstance(other, list):
+            self.resolve()
+            return self._items >= other
+        return NotImplemented
+    
+    def __gt__(self, other):
+        if isinstance(other, FileList):
+            self.resolve()
+            other.resolve()
+            return self._items >= other._items
+        elif isinstance(other, list):
+            self.resolve()
+            return self._items >= other
+        return NotImplemented
+
+    # List interface functions.
+
+    def append(self, obj):
+        self.resolve()
+        self._items.append(aspath(obj))
+    
+    def count(self, obj):
+        self.resolve()
+        return self._items.count(aspath(obj))
+    
+    def extend(self, iterobj):
+        self.resolve()
+        self._items.extend(aspath(p) for p in iterobj)
+    
+    def index(self, obj, *args):
+        self.resolve()
+        return self._items.index(aspath(obj), *args)
+
+    def insert(self, index, obj):
+        self.resolve()
+        self._items.insert(index, aspath(obj))
+
+    def pop(self, index):
+        self.resolve()
+        return aspath(self._items.pop(index))
+
+    def remove(self, obj):
+        self.resolve()
+        self._items.remove(aspath(obj))
+
+    def reverse(self):
+        self.resolve()
+        self._items.reverse()
+    
+    def sort(self, *args, **kwargs):
+        self.resolve()
+        self._items.sort(*args, **kwargs)
+
+    # FileList extension functions.
 
     def copy(self):
         "Return a cloned instance of this FileList"
-        return copy.copy(self)
+        return self.__class__(self)
 
-    def as_array(self):
-        """\
-        Return the matched filenames as an array.
-
-        Triggers name resolution. (Obviously...)
-        """
-        self.resolve()
-        return self.items
+    def expand(self):
+        ret = self.__class__(self)
+        ret.resolve()
+        return ret
 
     def include(self, *patterns):
         """\
@@ -94,10 +272,10 @@ class FileList(object):
         """
         for p in patterns:
             if isinstance(p, basestring):
-                self.pending_add.append(p)
+                self._pending_add.append(p)
             else:
                 map(self.include, p)
-        self.pending = True
+        self._pending = True
         return self
 
     def exclude(self, *patterns):
@@ -123,10 +301,12 @@ class FileList(object):
         """
         for p in patterns:
             if isinstance(p, basestring):
-                self.exclude_patterns.append(pat)
+                self._exclude_patterns.append(p)
+            elif callable(p):
+                self._exclude_funcs.append(p)
             else:
                 map(self.exclude, p)
-        if not self.pending:
+        if not self._pending:
             self._resolve_excludes()
         return self
     
@@ -147,56 +327,41 @@ class FileList(object):
         """
         for p in patterns:
             if isinstance(p, basestring):
-                self.exclude_patterns.append(re.compile(p))
+                self._exclude_patterns.append(re.compile(p))
             elif hasattr(p, "pattern") and hasattr(p, "search"):
                 # Can't find a better test for a compiled regular expression
-                self.exclude_patterns.append(p)
+                self._exclude_patterns.append(p)
             else:
-                map(self.exclude_reg, p)
-        if not self.pending:
+                map(self.exclude_re, p)
+        if not self._pending:
             self._resolve_excludes()
         return self
     
-    def clear_exclude(self):
-        "Clear all the exclude pattersn so that we exclude nothing."
-        self.exclude_patters = []
-        self.exclude_funcs = []
-        if not pending:
-            self.calculate_exclude_regexp()
+    def is_excluded(self, fn):
+        "Should the given filename be excluded?"
+        if not self._exclude_regexps:
+            self._calculate_exclude_regexp()
+        if any(r.search(fn) for r in self._exclude_regexps):
+            return True
+        return any(func(fn) for func in self._exclude_funcs)
+    
+    def clear_excludes(self):
+        "Clear all the exclude patterns."
+        self._exclude_patterns = []
+        self._exclude_funcs = []
+        if not self._pending:
+            self._calculate_exclude_regexp()
         return self
 
     def resolve(self):
         "Resolve all the pending glob patterns."
-        if self.pending:
-            self.pending = False
-            for fn in self.pending_add:
+        if self._pending:
+            self._pending = False
+            for fn in self._pending_add:
                 self._resolve_add(fn)
-            self.pending_add = []
-            self._resolve_exclude()
+            self._pending_add = []
+            self._resolve_excludes()
         return self
-    
-    def calculate_exclude_regexp(self):
-        self.exclude_exps = []
-        for e in self.exclude_patterns:
-            if hasattr(e, "pattern") and hasattr(e, "search"):
-                self.exclude_exps.append(e)
-            elif re.search(r"[*?]", e):
-                for fn in glob.glob(e):
-                    self.exclude_exps.append(re.compile(fn))
-            else:
-                self.exclude_exps.append(re.compile(e))
-    
-    def _resolve_add(self, fn):
-        if re.search(r"[*?\[\{]", fn):
-            self._add_matching(fn)
-        else:
-            self.items.append(fn)
-    
-    def _resolve_exclude(self):
-        self.calculate_exclude_regexp()
-        def _filt(fn):
-            return not any(map(lambda p: p.search(fn), self.exclude_regexps))
-        self.items = filter(_filt, self.items)
 
     def sub(self, pattern, repl):
         """\
@@ -206,26 +371,60 @@ class FileList(object):
         """
         self.resolve()
         p = re.compile(pattern)
-        self.items = map(lambda fn: p.sub(repl, fn), self.items)
+        for idx in range(len(self)):
+            self[idx] = p.sub(repl, self[idx])
         return self
-    
-    def existing(self):
+
+    def exist(self):
         """\
         Remove any file names that don't exist on the file system.
+        
+        Triggers file name resolution.
         """
         self.resolve()
-        self.items = filter(lambda fn: os.path.exists(fn), self.items)
+        idx = 0
+        while idx < len(self):
+            if not self[idx].exists():
+                self.pop(idx)
+            else:
+                idx += 1
         return self
-    
+
+    def _resolve_add(self, fn):
+        if re.search(r"[*?\[\{]", fn):
+            self._add_matching(fn)
+        else:
+            self.append(aspath(fn))
+
     def _add_matching(self, pattern):
         "Add files matching the glob pattern."
-        fnames = filter(lambda fn: not self.exclude(fn), glob.glob(pattern))
-        self.items.extend(fnames)
+        fnames = filter(lambda fn: not self.is_excluded(fn), glob.glob(pattern))
+        self.extend(aspath(fn) for fn in fnames)
 
-    def exclude(self, fn):
+    def _exclude(self, fn):
         "Should the given filename be excluded?"
-        if not self.exclude_regexps:
-            self.calculate_exclude_regexp()
-        if any(r.search(fn) for r in self.exclude_exps):
+        if not self._exclude_regexps:
+            self._calculate_exclude_regexp()
+        if any(r.search(fn) for r in self._exclude_regexps):
             return True
-        return any(func(fn) for func in self.exclude_funcs)
+        return any(func(fn) for func in self._exclude_funcs)
+    
+    def _resolve_excludes(self):
+        self._calculate_exclude_regexp()
+        idx = 0
+        while idx < len(self):
+            if self.is_excluded(self[idx]):
+                self.pop(idx)
+            else:
+                idx += 1
+
+    def _calculate_exclude_regexp(self):
+        self._exclude_regexps = []
+        for e in self._exclude_patterns:
+            if hasattr(e, "pattern") and hasattr(e, "search"):
+                self._exclude_regexps.append(e)
+            elif re.search(r"[*?]", e):
+                for fn in glob.glob(e):
+                    self._exclude_regexps.append(re.compile(fn))
+            else:
+                self._exclude_regexps.append(re.compile(e))

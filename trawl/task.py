@@ -4,6 +4,7 @@ import threading
 import time
 
 from trawl.chain import InvocationChain, EmptyInvocationChain
+from trawl.filelist import FileList
 
 class Task(object):
     def __init__(self, app, name):
@@ -12,7 +13,7 @@ class Task(object):
         self.scope = app.mgr.scope[:]
         self.name = name
         self.sources = []
-        self.deps = []
+        self.predeps = []
         self.actions = []
         self.already_invoked = False
         self.lock = threading.RLock()
@@ -24,8 +25,8 @@ class Task(object):
         klass = self.__class__.__name__
         return "<%s %s => [%s]>" % (klass, self.name, ', '.join(self.deps))
 
-    @staticmethod
-    def scoped_name(scope, task_name):
+    @classmethod
+    def scoped_name(klass, scope, task_name):
         return ":".join(scope + [task_name])
     
     @property
@@ -35,6 +36,16 @@ class Task(object):
             return self.sources[0]
         return None
     
+    @property
+    def deps(self):
+        expanded = []
+        for d in self.predeps:
+            if isinstance(d, FileList):
+                expanded.extend(d.expand())
+            else:
+                expanded.append(d)
+        return expanded
+
     @property
     def as_source(self):
         """\
@@ -56,7 +67,7 @@ class Task(object):
         if action is not None:
             self.actions.append(action)
         if deps is not None:
-            self.deps.extend(deps)
+            self.predeps.extend(deps)
         return self
 
     def execute(self, args=None):
@@ -90,16 +101,6 @@ class Task(object):
     def reenable(self):
         "Allow this task to be invoked again even if it has already run."
         self.already_invoked = False
-
-    def timestamp(self):
-        """\
-        The timestamp for this task. Basic tasks return the current time for
-        their timestamp. Other tasks can be more sophisticated.
-        """
-        ts = map(lambda d: self.mgr.lookup(d).timestamp(), self.deps)
-        if len(ts):
-            return max(ts)
-        return time.time()
     
     def _invoke(self, args, chain):
         chain = InvocationChain(chain, self)
@@ -113,18 +114,16 @@ class Task(object):
                 self.execute(args)
     
     def _invoke_deps(self, args, chain):
-        self.app.trace("** Deps: [%s]" % ', '.join(self.deps))
-        def _invoke_dep(p):
-            prereq = self.mgr.find(p, self.scope)
+        for dep in self.deps:
+            prereq = self.mgr.find(dep, self.scope)
             #prereq_args = args.new_scope(prereq.arg_names)
             prereq._invoke(args, chain)
-        map(_invoke_dep, self.deps)
 
     def _get_sources(self):
-        tasks = map(lambda d: self.mgr.lookup(d, self.scope), self.deps)
+        tasks = map(lambda d: self.mgr.find(d, self.scope), self.deps)
         tasks = filter(lambda t: t.as_source, tasks)
         return map(lambda t: t.name, tasks)                
-            
+
     def _trace_info(self):
         "Format trace flags for display."
         flags = []

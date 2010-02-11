@@ -3,8 +3,10 @@ import types
 
 from trawl.application import application
 from trawl.task import Task
+from trawl.filelist import FileList
 from trawl.filetask import FileTask, FileCreationTask
 from trawl.multitask import MultiTask
+from trawl.path import aspath
 
 __all__ = ["rule", "task", "build", "multitask", "ns"]
 
@@ -22,6 +24,8 @@ def _get_name(func):
             LAMBDA_COUNT += 1
             return "<lambda>.%d" % LAMBDA_COUNT
         return func.func_name
+    elif isinstance(func, FileList):
+        return func
     else:
         raise TypeError("Unable to make a task from type: %s" % func.__class__)
 
@@ -60,6 +64,8 @@ def task(*args, **kwargs):
             application.mgr.add_task(type, name, deps=deps)
         elif deps is not None:
             t.enhance(deps=deps)
+        # Don't re-add deps.
+        deps = None
     
     if action is None: # Need to recurse
         return lambda f: task(f, type=type, name=name, deps=deps)
@@ -69,7 +75,7 @@ def task(*args, **kwargs):
 
 def build(fname, *args, **kwargs):
     type = FileTask if kwargs.get("recreate", True) else FileCreationTask
-    return task(*args, type=type, name=fname)
+    return task(*args, type=type, name=aspath(fname))
 
 def multitask(func):
     return task(func, type=MultiTask)

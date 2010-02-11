@@ -68,3 +68,33 @@ def test_not_rebuilt():
     t.eq(open(src).read(), first_run)
     t.eq(open(tgt).read(), first_run)
 
+@t.test
+def test_rerun_build():
+    tgt = t.tmpfname()
+    @t.build(tgt)
+    def mktgt(task):
+        task.name.write_bytes("yup")
+    
+    t.app.run(None, [tgt])
+    t.eq(t.app._dbg, [(tgt, None)])
+    t.app.clear()
+    t.app.run(None, [tgt])
+    t.eq(t.app._dbg, [(tgt, None)])
+
+@t.test
+def test_dep_not_filetask():
+    src = t.tmpfname()
+    tgt = t.tmpfname()
+    @t.task
+    def mksrc(task):
+        src.write_bytes("sourcey")
+    @t.build(tgt, [mksrc])
+    def mktgt(task):
+        task.name.write_bytes("yup")
+    t.app.run(None, [tgt])
+    t.eq(t.app._dbg, [("mksrc", None), (tgt, None)])
+    
+    t.app.clear()
+    t.app.run(None, [tgt])
+    t.eq(t.app._dbg, [("mksrc", None), (tgt, None)])
+

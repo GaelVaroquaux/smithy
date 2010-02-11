@@ -2,12 +2,13 @@
 import os
 
 from trawl.const import EARLY
+from trawl.filelist import FileList
 from trawl.task import Task
 
 class FileTask(Task):
 
-    @staticmethod
-    def scope_name(scope, task_name):
+    @classmethod
+    def scoped_name(klass, scope, task_name):
         return task_name
     
     @property
@@ -17,9 +18,16 @@ class FileTask(Task):
     def needed(self):
         if not os.path.exists(self.name):
             return True
+        if len(self.deps) == 0:
+            return True
         our_stamp = self.timestamp()
-        dep_stamps = map(lambda d: self.mgr.find(d).timestamp(), self.deps)
-        return any(map(lambda ds: ds > our_stamp, dep_stamps))
+        for d in self.deps:
+            task = self.mgr.find(d)
+            if not isinstance(task, FileTask):
+                return True
+            elif task.timestamp() > our_stamp:
+                return True
+        return False
 
     def timestamp(self):
         if os.path.exists(self.name):
