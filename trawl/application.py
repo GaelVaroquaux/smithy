@@ -9,7 +9,7 @@ from trawl.filelist import FileList
 from trawl.taskmanager import TaskManager
 import trawl.exceptions as exc
 
-__usage__ = "[OPTIONS] task1 [task2 ...]"
+__usage__ = "%prog [OPTIONS] task1 [task2 ...]"
 
 class Application(object):
     def __init__(self):
@@ -56,7 +56,7 @@ class Application(object):
         maintrawl = self.find_trawlfile()
         # Jump to the directory we're running from.
         self.workdir = os.path.dirname(maintrawl)
-        if self.workdir != os.getcwd():
+        if self.workdir and self.workdir != os.getcwd():
             os.chdir(self.workdir)
             sys.path.insert(0, self.workdir)
         self.load_file(maintrawl)
@@ -107,7 +107,6 @@ class Application(object):
         if not len(load_list) and self.opts.srchup:
             (updir, ignore) = os.path.split(os.getcwd())
             while updir and not len(load_list):
-                print updir
                 for tf in TRAWL_FILES:
                     tf = os.path.join(updir, tf)
                     if os.path.exists(tf):

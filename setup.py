@@ -15,7 +15,7 @@ setup(
     author = 'Paul J. Davis',
     author_email = 'paul.joseph.davis@gmail.com',
     license = 'MIT',
-    url = 'http://github.com/davisp/trawl',
+    url = 'http://packages.python.org/Trawl/',
 
     classifiers = [
         'Development Status :: 4 - Beta',

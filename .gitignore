@@ -3,3 +3,4 @@ Trawl.egg-info/
 build/
 dist/
 tests/data/
+docs/_build/
