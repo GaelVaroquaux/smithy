@@ -8,7 +8,7 @@ README = os.path.join(os.path.dirname(__file__), 'README.rst')
 
 setup(
     name = 'Trawl',
-    version = '0.1.1',
+    version = '0.2.0',
 
     description = 'Python port of Ruby Rake',
     long_description = open(README).read(),
