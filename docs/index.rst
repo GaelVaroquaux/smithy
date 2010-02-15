@@ -281,8 +281,3 @@ Feedback
 ========
 
 Development is still quite young on this project. I'm using it as I develop it so I have a pretty good motivation to keep it on track. If you have suggestions or want to contribute find me as ``davisp`` on `irc.freenode.net <http://freenode.net>`_ or as `davisp on GitHub <http://github.com/davisp>`_.
-
-Name Change
-===========
-
-I'm also planning on changing the name of this project in the very near future to something other than Smithy. So if this disappears just checkout my GitHub recent activity list for the new file. Right now I'm leaning towards Smithy with ``smithy`` as the command name and ``Forgefile`` for the main task definition file.
