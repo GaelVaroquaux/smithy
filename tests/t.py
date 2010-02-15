@@ -1,16 +1,17 @@
-# Copyright 2009 Paul J. Davis <paul.joseph.davis@gmail.com>
+# Copyright 2010 Paul J. Davis <paul.joseph.davis@gmail.com>
 #
-# This file is part of the Trawl package released under the MIT license.
+# This file is part of the Smithy package released under the MIT license.
+
 import functools
 import os
 import unittest
 import uuid
 
-from trawl.application import application as app
-from trawl.decorators import *
-from trawl.exceptions import *
-from trawl.filelist import FileList, FileListIter
-from trawl.path import aspath, path
+from smithy.application import application as app
+from smithy.decorators import *
+from smithy.exceptions import *
+from smithy.filelist import FileList, FileListIter
+from smithy.path import aspath, path
 
 DATA_DIR = path(__file__).parent / "data"
 

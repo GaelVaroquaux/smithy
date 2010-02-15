@@ -31,7 +31,7 @@ def test_two_tasks():
 def test_task_arg():
     @t.task
     def bizzle(task):
-        from trawl.task import Task
+        from smithy.task import Task
         t.eq(isinstance(task, Task), True)
         return task.name
     t.app.run(None, ["bizzle"])
