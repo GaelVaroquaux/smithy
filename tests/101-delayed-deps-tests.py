@@ -1,3 +1,6 @@
+# Copyright 2010 Paul J. Davis <paul.joseph.davis@gmail.com>
+#
+# This file is part of the Smithy package released under the MIT license.
 
 import os
 import t
