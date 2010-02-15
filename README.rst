@@ -1,9 +1,11 @@
-Trawl - Another tool in the shed
-================================
+Smithy - Another tool in the shed
+=================================
 
 This is as straight of a clone of Rake that I could come up with.
 
-`Yay Sphinx Docs <http://packages.python.org/Trawl/>`_
+And thus begins the rename.
+
+`Yay Sphinx Docs <http://packages.python.org/Smithy/>`_
 
 TODO
 ++++
