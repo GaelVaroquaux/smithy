@@ -5,7 +5,7 @@ import glob
 import os
 import re
 
-from trawl.path import aspath, path
+from smithy.path import aspath, path
 
 def _exclude_cores(fn):
     return re.search(r"(^|[\/\\])core$", fn) and not os.path.isdir(fn)

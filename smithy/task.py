@@ -3,8 +3,8 @@ import re
 import threading
 import time
 
-from trawl.chain import InvocationChain, EmptyInvocationChain
-from trawl.filelist import FileList
+from smithy.chain import InvocationChain, EmptyInvocationChain
+from smithy.filelist import FileList
 
 class Task(object):
     def __init__(self, app, name):

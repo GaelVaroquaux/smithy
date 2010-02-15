@@ -5,10 +5,10 @@ import os
 import re
 import sys
 
-import trawl.exceptions as exc
-from trawl.filelist import FileList
-from trawl.path import path
-from trawl.taskmanager import TaskManager
+import smithy.exceptions as exc
+from smithy.filelist import FileList
+from smithy.path import aspath, path
+from smithy.taskmanager import TaskManager
 
 __usage__ = "%prog [OPTIONS] task1 [task2 ...]"
 
@@ -54,13 +54,13 @@ class Application(object):
         for dn in self.opts.incdirs:
             sys.path.insert(0, dn)
         # Load the main file.
-        maintrawl = self.find_trawlfile()
+        bellows = self.find_bellows()
         # Jump to the directory we're running from.
-        self.workdir = os.path.dirname(maintrawl)
+        self.workdir = os.path.dirname(bellows)
         if self.workdir and self.workdir != os.getcwd():
             os.chdir(self.workdir)
             sys.path.insert(0, self.workdir)
-        self.load_file(maintrawl)
+        self.load_file(bellows)
         # Load files that were required
         while len(self.required_files):
             required = self.required_files[:]
@@ -81,11 +81,12 @@ class Application(object):
         exec code in self.globals[fname]
     
     def init_globals(self, fname):
-        import trawl.decorators as dec
+        import smithy.decorators as dec
         return {
             "__file__": fname,
-            "FileList": FileList,
+            "aspath": aspath,
             "path": path,
+            "FileList": FileList,
             "require": self.require,
             "task": dec.task,
             "rule": dec.rule,
@@ -94,30 +95,30 @@ class Application(object):
             "ns": dec.ns
         }
 
-    def find_trawlfile(self):
-        TRAWL_FILES = "Trawlfile trawlfile Trawfile.py trawfile.py".split()
+    def find_bellows(self):
+        BELLOWS_FILES = "Bellows bellows Bellows.py bellows.py".split()
         load_list = []
         
         # Looking for the entry Trawfile.
-        if self.opts.trawlfile is not None:
-            TRAWL_FILES = [self.opts.trawlfile]
-        for tf in TRAWL_FILES:
-            if os.path.isfile(tf):
-                return tf
+        if self.opts.bellows is not None:
+            BELLOWS_FILES = [self.opts.bellows]
+        for bf in BELLOWS_FILES:
+            if os.path.isfile(bf):
+                return bf
 
         # Try searching upwards for the main Trawfile
         if not len(load_list) and self.opts.srchup:
             (updir, ignore) = os.path.split(os.getcwd())
             while updir and not len(load_list):
-                for tf in TRAWL_FILES:
-                    tf = os.path.join(updir, tf)
-                    if os.path.exists(tf):
-                        return tf
+                for bf in BELLOWS_FILES:
+                    bf = os.path.join(updir, bf)
+                    if os.path.exists(bf):
+                        return bf
                 (upupdir, ignore) = os.path.split(updir)
                 if upupdir == updir: break
                 updir = upupdir
         
-        raise exc.NoTrawlfileError()
+        raise exc.NoBellowsFileError()
     
     def require(self, filename):
         self.required_files.append(filename)            
@@ -177,18 +178,18 @@ def options():
             metavar="INTEGER",
             help="Maximum recursion depth for rule resolution."),
 
-        op.make_option('-f', dest="trawlfile", default=None, metavar="FILE",
-            help="Use FILE as the Trawlfile"),
+        op.make_option('-b', dest="bellows", default=None, metavar="FILE",
+            help="Use FILE as the Bellows file."),
         op.make_option('-N', dest="srchup", default=True, action='store_false',
-            help="Do not search parent directories for a Trawlfile"),
+            help="Do not search parent directories for a Bellows file."),
         op.make_option('-G', dest="incsys", default=True, action="store_false",
-            help="Ignore system trawlers."),
-        op.make_option('-g', dest="sysglob", default="~/.trawl/*.trawl",
+            help="Ignore system Bellows files."),
+        op.make_option('-g', dest="sysglob", default="~/.smithy/*.py",
             metavar="GLOB",
-            help="Import system trawl files. [Default %default]"),
-        op.make_option('-L', dest="libglob", default='./trawlers/*.trawl',
+            help="Import system Bellows files. [Default %default]"),
+        op.make_option('-L', dest="libglob", default='./smithy/*.py',
             metavar="GLOB",
-            help="Import local trawlfiles. [Default %default]"),
+            help="Import local Bellows files. [Default %default]"),
 
         op.make_option('-I', dest="incdirs", default=[], action="append",
             metavar="DIR", help="Add DIR to the PYTHONPATH"),
@@ -207,7 +208,7 @@ def main():
     opts, args = parser.parse_args()
     try:
         application.run(opts, args)
-    except exc.TrawlError, e:
+    except exc.SmithyError, e:
         print str(e)
 
 

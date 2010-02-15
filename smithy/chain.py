@@ -1,5 +1,5 @@
 
-from trawl.exceptions import DependencyCycleError
+from smithy.exceptions import DependencyCycleError
 
 class InvocationChain(object):    
     def __init__(self, chain, task):

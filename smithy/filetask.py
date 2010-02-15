@@ -1,9 +1,9 @@
 
 import os
 
-from trawl.const import EARLY
-from trawl.filelist import FileList
-from trawl.task import Task
+from smithy.const import EARLY
+from smithy.filelist import FileList
+from smithy.task import Task
 
 class FileTask(Task):
 

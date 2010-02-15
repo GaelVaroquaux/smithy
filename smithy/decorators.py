@@ -1,12 +1,12 @@
 
 import types
 
-from trawl.application import application
-from trawl.task import Task
-from trawl.filelist import FileList
-from trawl.filetask import FileTask, FileCreationTask
-from trawl.multitask import MultiTask
-from trawl.path import aspath
+from smithy.application import application
+from smithy.task import Task
+from smithy.filelist import FileList
+from smithy.filetask import FileTask, FileCreationTask
+from smithy.multitask import MultiTask
+from smithy.path import aspath
 
 __all__ = ["rule", "task", "build", "multitask", "ns"]
 

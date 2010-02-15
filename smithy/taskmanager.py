@@ -2,9 +2,9 @@
 import os
 import re
 
-from trawl.exceptions import \
+from smithy.exceptions import \
         TaskNotFoundError, NoActionForTaskError, NoRuleError
-from trawl.filetask import FileTask
+from smithy.filetask import FileTask
 
 class TaskManager(object):
     

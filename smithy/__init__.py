@@ -1,2 +1,0 @@
-
-from trawl.decorators import *

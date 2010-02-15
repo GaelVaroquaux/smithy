@@ -1,37 +1,37 @@
 
-class TrawlError(Exception):
+class SmithyError(Exception):
     pass
 
-class NoTrawlfileError(TrawlError):
+class NoBellowsFileError(SmithyError):
     def __str__(self):
-        return "Failed to find a Trawlfile."
+        return "Failed to find a Bellows file."
 
-class TaskArgumentError(TrawlError):
+class TaskArgumentError(SmithyError):
     "Illformed task declaration"
     pass
 
-class TaskNotFoundError(KeyError, TrawlError):
+class TaskNotFoundError(KeyError, SmithyError):
     def __init__(self, name):
         self.name = name
     def __str__(self):
         return "Task not found: %s" % self.name
 
-class NoActionForTaskError(RuntimeError, TrawlError):
+class NoActionForTaskError(RuntimeError, SmithyError):
     "No action can be found or created for a given task."
     pass
 
-class DependencyCycleError(RuntimeError, TrawlError):
+class DependencyCycleError(RuntimeError, SmithyError):
     "Cyclic invocation chain."
     def __init__(self, name):
         self.name = name
     def __str__(self):
         return "Dependency cycle detected at: %s" % self.name
 
-class NoRuleError(TrawlError):
+class NoRuleError(SmithyError):
     "Unable to recursively generate a task for this source."
     pass
 
-class RuleRecursionOverflowError(TrawlError):
+class RuleRecursionOverflowError(SmithyError):
     "Recursion overflow in task selection"
     def __init__(self, *args):
         super(RuleRecursionOverflowError, self).__init__(*args)
