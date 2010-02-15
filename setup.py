@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 README = os.path.join(os.path.dirname(__file__), 'README.rst')
 
 setup(
-    name = 'Trawl',
+    name = 'Smithy',
     version = '0.2.1',
 
     description = 'Python port of Ruby Rake',
@@ -15,7 +15,7 @@ setup(
     author = 'Paul J. Davis',
     author_email = 'paul.joseph.davis@gmail.com',
     license = 'MIT',
-    url = 'http://packages.python.org/Trawl/',
+    url = 'http://packages.python.org/Smithy/',
 
     classifiers = [
         'Development Status :: 4 - Beta',
@@ -30,7 +30,7 @@ setup(
     
     packages = find_packages(),
     include_package_data = True,
-    scripts = ['bin/trawl'],
+    scripts = ['bin/smithy'],
     
     test_suite = 'nose.collector',
 )

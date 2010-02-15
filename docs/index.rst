@@ -1,23 +1,23 @@
 Overview
 ========
 
-Trawl is a Python port of `Rake <http://rake.rubyforge.org/>`_. While it currently has a compatible core set of features, some of the extra fancy bits have not yet been worked on. If you would like to see your favorite Rake feature added feel free to open an issue on `GitHub <http://github.com/davisp/trawl/>`_ or better yet, send me a pull request.
+Smithy is a Python port of `Rake <http://rake.rubyforge.org/>`_. While it currently has a compatible core set of features, some of the extra fancy bits have not yet been worked on. If you would like to see your favorite Rake feature added feel free to open an issue on `GitHub <http://github.com/davisp/smithy/>`_ or better yet, send me a pull request.
 
-You can find the source code repository at `http://github.com/davisp/trawl <http://github.com/davisp/trawl>`_.
+You can find the source code repository at `http://github.com/davisp/smithy <http://github.com/davisp/smithy>`_.
 
-Trawl is released under the `MIT license <license.html>`_.
+Smithy is released under the `MIT license <license.html>`_.
 
 Installation
 ============
 
 Via ``easy_install``::
 
-    $ easy_install trawl==dev
+    $ easy_install smithy==dev
 
 Or from a source checkout::
 
-    $ git clone git://github.com/davisp/trawl.git
-    $ cd trawl
+    $ git clone git://github.com/davisp/smithy.git
+    $ cd smithy
     $ python setup.py test
     $ sudo python setup.py install
 
@@ -27,14 +27,14 @@ Note that you can also use ``sudo python setup.py develop`` to be able to modify
 A Simple Example
 ================
 
-Once installed, you'll run the ``trawl`` command to execute your defined tasks:
+Once installed, you'll run the ``smithy`` command to execute your defined tasks:
 ::
 
-    $ trawl [OPTIONS] task1 [task2 ...]
+    $ smithy [OPTIONS] task1 [task2 ...]
 
-You can use ``trawl -h`` to see the complete list of options.
+You can use ``smithy -h`` to see the complete list of options.
 
-Given a ``Trawlfile`` that looks like such:
+Given a ``Bellows`` file that looks like such:
 ::
 
     @task
@@ -45,27 +45,27 @@ Given a ``Trawlfile`` that looks like such:
     def test():
         print "I have been tested!"
 
-Running trawl from the directory containing this ``Trawlfile`` should look like this::
+Running smithy from the directory containing this ``Bellows`` file should look like this::
 
     $ ls
-    Trawlfile
-    $ trawl test
+    Bellows
+    $ smithy test
     ** Execute prereq
     I am a prereq
     ** Execute test
     I have been tested!
 
-Trawl is on your side.
+Smithy is on your side.
 
-Trawlfile Format as of (0.2.0)
-==============================
+Bellows File Format as of (0.2.0)
+=================================
 
-As in Rake, Trawlfiles are actually arbitrary Python scripts. Trawl merely presents these scripts with a few methods and decorators for declaring tasks.
+As in Rake, Bellows files are actually arbitrary Python scripts. Smithy merely presents these scripts with a few methods and decorators for declaring tasks.
 
 Tasks
 +++++
 
-The most basic unit of work in a Trawlfile is a task. A task has a type, a name, an action and a set of dependencies. Only type and name are required. Task type's are generally implicit and decided by how the task was declared.
+The most basic unit of work in a Bellows file is a task. A task has a type, a name, an action and a set of dependencies. Only type and name are required. Task type's are generally implicit and decided by how the task was declared.
 
 Tasks definitions are cumulative. If a task is defined multiple times, its definitions are joined into a single task definition that is treated as a single entity. This allows you to progressively build up tasks as you see fit.
 
@@ -123,10 +123,10 @@ If you define a task action that accepts a single parameter, the Task object wil
 
 Would print ``'happy_task depends on foo, bar'``.
 
-Importing Functions from Trawl
-------------------------------
+Auto-Imported Functions from Smithy
+-----------------------------------
 
-When a task definition file is loaded by trawl, the commonly used functions are automatically inserted into the global scope. This means that you are not required to explicitly import anything from trawl for basic operation. This is the complete list of symbols that are available:
+When a task definition file is loaded by smithy, the commonly used functions are automatically inserted into the global scope. This means that you are not required to explicitly import anything from smithy for basic operation. This is the complete list of symbols that are available:
 
 * __file__ - The filename that is being executed.
 * FileList - The FileList class for dealing with lists of file names.
@@ -260,7 +260,7 @@ Some times we don't necessarily know what file names will be necessary but we ca
 Implicit File Tasks
 -------------------
 
-Each time Trawl goes to execute a task it will try and resolve the task dependencies and if need be, execute them. When trawl finds a task dependency for which there is no definition, it does one of two things:
+Each time Smithy goes to execute a task it will try and resolve the task dependencies and if need be, execute them. When Smithy finds a task dependency for which there is no definition, it does one of two things:
 
 1. Apply any rules that match the task name.
 2. Attempt to make a file task that is a no-op task.
@@ -270,7 +270,7 @@ This way you can refer to files on the file system as dependencies. They will be
 Requiring other Task Files
 ==========================
 
-If you want, you can load other task definition files from the main Trawlfile. Files that are loaded are not actually processed until the current file is finished being evaluated. Requiring a file is as simple as:
+If you want, you can load other task definition files from the main Bellows file. Files that are loaded are not actually processed until the current file is finished being evaluated. Requiring a file is as simple as:
 ::
 
     require("my_other_file.py")
@@ -285,4 +285,4 @@ Development is still quite young on this project. I'm using it as I develop it s
 Name Change
 ===========
 
-I'm also planning on changing the name of this project in the very near future to something other than Trawl. So if this disappears just checkout my GitHub recent activity list for the new file. Right now I'm leaning towards Smithy with ``smithy`` as the command name and ``Forgefile`` for the main task definition file.
+I'm also planning on changing the name of this project in the very near future to something other than Smithy. So if this disappears just checkout my GitHub recent activity list for the new file. Right now I'm leaning towards Smithy with ``smithy`` as the command name and ``Forgefile`` for the main task definition file.
