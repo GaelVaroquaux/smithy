@@ -5,9 +5,10 @@ import os
 import re
 import sys
 
-from trawl.filelist import FileList
-from trawl.taskmanager import TaskManager
 import trawl.exceptions as exc
+from trawl.filelist import FileList
+from trawl.path import path
+from trawl.taskmanager import TaskManager
 
 __usage__ = "%prog [OPTIONS] task1 [task2 ...]"
 
@@ -84,6 +85,7 @@ class Application(object):
         return {
             "__file__": fname,
             "FileList": FileList,
+            "path": path,
             "require": self.require,
             "task": dec.task,
             "rule": dec.rule,
