@@ -135,7 +135,9 @@ class Application(object):
             for name in names:
                 tasks.append(self.mgr.tasks[name])
         for t in tasks:
-            descr = ((t.descr or "").strip().splitlines() or [""])[0][:50]
+            if not t.descr:
+                continue
+            descr = (t.descr.strip().splitlines() or [""])[0][:50]
             if len(t.name) < 20:
                 print "%-20s # %s" % (t.name, descr)
             else:
