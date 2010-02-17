@@ -1,5 +1,5 @@
 *.pyc
-Trawl.egg-info/
+Smithy.egg-info/
 build/
 dist/
 tests/data/
