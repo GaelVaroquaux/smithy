@@ -125,14 +125,21 @@ class Application(object):
     
     def display_tasks(self, patterns):
         names = sorted(self.mgr.tasks.keys())
+        tasks = []
         if len(patterns):
             patterns = map(re.compile, patterns)
             for name in names:
                 if any(map(lambda p: p.search(name), patterns)):
-                    print str(self.mgr.tasks[name])
+                    tasks.append(self.mgr.tasks[name])
         else:
             for name in names:
-                print str(self.mgr.tasks[name])
+                tasks.append(self.mgr.tasks[name])
+        for t in tasks:
+            descr = ((t.descr or "").strip().splitlines() or [""])[0][:50]
+            if len(t.name) < 20:
+                print "%-20s # %s" % (t.name, descr)
+            else:
+                print "%s\n%20s # %s" % (t.name, "", descr)
 
     def is_dry_run(self):
         return getattr(self.opts, "dryrun", False)

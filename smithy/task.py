@@ -12,6 +12,7 @@ class Task(object):
         self.mgr = app.mgr
         self.scope = app.mgr.scope[:]
         self.name = name
+        self.descr = None
         self.sources = []
         self.predeps = []
         self.actions = []
@@ -66,6 +67,8 @@ class Task(object):
         "Add an action and/or dependencies to this task."
         if action is not None:
             self.actions.append(action)
+        if hasattr(action, "func_doc") and action.func_doc:
+            self.descr = action.func_doc
         if deps is not None:
             self.predeps.extend(deps)
         return self
