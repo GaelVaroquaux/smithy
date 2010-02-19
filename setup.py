@@ -8,7 +8,7 @@ README = os.path.join(os.path.dirname(__file__), 'README.rst')
 
 setup(
     name = 'Smithy',
-    version = '0.2.1',
+    version = '0.3.0',
 
     description = 'Python port of Ruby Rake',
     long_description = open(README).read(),
