@@ -12,8 +12,8 @@ master_doc = 'index'
 project = u'Smithy'
 copyright = u'2010, Paul J. Davis'
 
-version = '0.2'
-release = '0.2.0'
+version = '0.3'
+release = '0.3.0'
 
 exclude_trees = []
 pygments_style = 'sphinx'
