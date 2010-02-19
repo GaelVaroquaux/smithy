@@ -135,6 +135,11 @@ class Application(object):
         else:
             for name in names:
                 tasks.append(self.mgr.tasks[name])
+        tasks = filter(lambda t: t.descr, tasks)
+        if not len(tasks):
+            print "No tasks have been described."
+            return
+        print "Tasks: "
         for t in tasks:
             if not t.descr:
                 continue
