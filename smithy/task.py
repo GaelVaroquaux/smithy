@@ -108,7 +108,6 @@ class Task(object):
     def _invoke(self, args, chain):
         chain = InvocationChain(chain, self)
         with self.lock:
-            self.app.trace("** Invoke %s %s" % (self.name, self._trace_info()))
             if self.already_invoked:
                 return
             self.already_invoked = True

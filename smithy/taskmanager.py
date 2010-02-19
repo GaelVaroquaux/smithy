@@ -4,7 +4,7 @@ import re
 
 from smithy.exceptions import \
         TaskNotFoundError, NoActionForTaskError, NoRuleError
-from smithy.filetask import FileTask
+from smithy.filetask import FileCreationTask, FileTask
 
 class TaskManager(object):
     
@@ -88,7 +88,7 @@ class TaskManager(object):
     def _make_file_task(self, task_name):
         if not os.path.isfile(task_name):
             return None
-        return self.add_task(FileTask, task_name)
+        return self.add_task(FileCreationTask, task_name)
     
     def _apply_rule(self, name, extensions, action, depth):
         def _mk_task(src):
