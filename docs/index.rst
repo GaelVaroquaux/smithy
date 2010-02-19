@@ -111,6 +111,42 @@ Dependencies also work as expected:
 
 Here we've declared a depenency on ``yourtask`` which will run before an attempt is made to run ``mytask``.
 
+Describing Tasks
+----------------
+
+To help users select the task that is appropriate you can give them a
+description that will cause the task to be listed on the command line when
+requested.
+
+For instance:
+::
+
+    @task
+    def run():
+        "Make it go!"
+        pass
+
+Would list a ``run`` task with the description ``Make it go!`` when the user
+runs ``smithy -T``.
+
+You can also use the describe function in your tasks descriptions. Any
+description provided to this method will override doc string descriptions:
+::
+
+    @task
+    def run():
+        "Useful note to developers"
+        pass
+
+    desc(run, "Useful note to users")
+
+    desc("next", "Yay users")
+
+    @task
+    def next():
+        "The desc() takes precedence over this docstring."
+        pass
+
 Task Arguments
 --------------
 
@@ -129,8 +165,11 @@ Auto-Imported Functions from Smithy
 When a task definition file is loaded by smithy, the commonly used functions are automatically inserted into the global scope. This means that you are not required to explicitly import anything from smithy for basic operation. This is the complete list of symbols that are available:
 
 * __file__ - The filename that is being executed.
+* aspath - Convert to an instance of path.
+* path - The famous path.py class
 * FileList - The FileList class for dealing with lists of file names.
 * require - Loading other task files.
+* desc - Specify a description for a task.
 * task - Our friendly task function.
 * rule - Define a rule to create implicit tasks for unmet dependencies
 * build - Define a task that creates a file.

@@ -5,6 +5,7 @@ import re
 from smithy.exceptions import \
         TaskNotFoundError, NoActionForTaskError, NoRuleError
 from smithy.filetask import FileCreationTask, FileTask
+from smithy.task import Task
 
 class TaskManager(object):
     
@@ -36,6 +37,12 @@ class TaskManager(object):
         task = self._intern(type, name)
         task.enhance(action=action, deps=deps)
         return task
+
+    def describe(self, name, description):
+        task = self.lookup(name)
+        if task is None:
+            task = self.add_task(Task, name)
+        task.enhance(description=description)
 
     def find(self, name, scope=None):
         task = self.lookup(name, scope)

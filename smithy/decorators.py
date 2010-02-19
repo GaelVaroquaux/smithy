@@ -8,7 +8,7 @@ from smithy.filetask import FileTask, FileCreationTask
 from smithy.multitask import MultiTask
 from smithy.path import aspath
 
-__all__ = ["rule", "task", "build", "multitask", "ns"]
+__all__ = ["desc", "rule", "task", "build", "multitask", "ns"]
 
 FUNC_TYPES = (types.FunctionType, types.BuiltinFunctionType)
 METH_TYPES = (types.MethodType, types.BuiltinMethodType)
@@ -28,6 +28,9 @@ def _get_name(func):
         return func
     else:
         raise TypeError("Unable to make a task from type: %s" % func.__class__)
+
+def desc(name, description):
+    application.mgr.describe(_get_name(name), description)
 
 def rule(pattern, sources):
     def _create_rule(func):

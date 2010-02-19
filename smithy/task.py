@@ -63,14 +63,21 @@ class Task(object):
             self.deps.pop()
         return self
 
-    def enhance(self, action=None, deps=None):
+    def enhance(self, action=None, deps=None, description=None):
         "Add an action and/or dependencies to this task."
         if action is not None:
             self.actions.append(action)
-        if hasattr(action, "func_doc") and action.func_doc:
-            self.descr = action.func_doc
         if deps is not None:
             self.predeps.extend(deps)
+        if description is not None:
+            # Describing a task always overrides the current
+            # description.
+            self.descr = description
+        elif self.descr is None:
+            # Only use a doc string if we don't already have
+            # a description.
+            if hasattr(action, "func_doc") and action.func_doc:
+                self.descr = action.func_doc
         return self
 
     def execute(self, args=None):

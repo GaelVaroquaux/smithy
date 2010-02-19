@@ -88,6 +88,7 @@ class Application(object):
             "path": path,
             "FileList": FileList,
             "require": self.require,
+            "desc": dec.desc,
             "task": dec.task,
             "rule": dec.rule,
             "build": dec.build,
