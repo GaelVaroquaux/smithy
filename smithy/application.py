@@ -7,6 +7,7 @@ import sys
 
 import smithy.exceptions as exc
 from smithy.filelist import FileList
+from smithy.filetask import FileTask
 from smithy.path import aspath, path
 from smithy.taskmanager import TaskManager
 
@@ -34,6 +35,9 @@ class Application(object):
             self.load()
             if self.opts.list:
                 self.display_tasks(tasks)
+                exit(0)
+            elif self.opts.do_deps:
+                self.display_deps(tasks)
                 exit(0)
 
         if len(tasks) == 0:
@@ -126,16 +130,7 @@ class Application(object):
         self.required_files.append(filename)            
     
     def display_tasks(self, patterns):
-        names = sorted(self.mgr.tasks.keys())
-        tasks = []
-        if len(patterns):
-            patterns = map(re.compile, patterns)
-            for name in names:
-                if any(map(lambda p: p.search(name), patterns)):
-                    tasks.append(self.mgr.tasks[name])
-        else:
-            for name in names:
-                tasks.append(self.mgr.tasks[name])
+        tasks = self.find_tasks(patterns)
         tasks = filter(lambda t: t.descr, tasks)
         if not len(tasks):
             print "No tasks have been described."
@@ -149,6 +144,50 @@ class Application(object):
                 print "%-20s # %s" % (t.name, descr)
             else:
                 print "%s\n%20s # %s" % (t.name, "", descr)
+
+    def display_deps(self, patterns):
+        tasks = self.find_tasks(patterns)
+        for t in tasks:
+            if not t.descr:
+                print "* %s" % t.name
+            else:
+                descr = (t.descr.splitlines() or [""])[0][:50]
+                if len(t.name) < 20:
+                    print "* %-20s # %s" % (t.name, descr)
+                else:
+                    print "* %-20s # %s" % (t.name, descr[:-(len(t.name)-20)])
+            if not len(t.deps):
+                print ""
+                continue
+            task_deps = []
+            file_deps = []
+            for d in t.deps:
+                dep = self.mgr.find(d)
+                if isinstance(dep, FileTask):
+                    file_deps.append(dep.name)
+                else:
+                    task_deps.append(dep.name)
+            if len(task_deps):
+                task_deps.sort()
+                print " (t) %s" % ' '.join(task_deps)
+            if len(file_deps):
+                file_deps.sort()
+                for fd in file_deps:
+                    print " (f) %s" % fd
+            print ""
+
+    def find_tasks(self, patterns):
+        names = sorted(self.mgr.tasks.keys())
+        tasks = []
+        if len(patterns):
+            patterns = map(re.compile, patterns)
+            for name in names:
+                if any(map(lambda p: p.search(name), patterns)):
+                    tasks.append(self.mgr.tasks[name])
+        else:
+            for name in names:
+                tasks.append(self.mgr.tasks[name])
+        return tasks
 
     def is_dry_run(self):
         return getattr(self.opts, "dryrun", False)
