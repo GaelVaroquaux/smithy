@@ -57,7 +57,7 @@ Running smithy from the directory containing this ``Bellows`` file should look l
 
 Smithy is on your side.
 
-Bellows File Format as of (0.2.0)
+Bellows File Format as of (0.4.0)
 =================================
 
 As in Rake, Bellows files are actually arbitrary Python scripts. Smithy merely presents these scripts with a few methods and decorators for declaring tasks.
