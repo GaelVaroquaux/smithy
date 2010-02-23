@@ -47,13 +47,12 @@ class Task(object):
                 expanded.append(d)
         return expanded
 
-    @property
-    def as_source(self):
+    def as_sources(self):
         """\
         Return the source representation of this task. Mostly meant for
-        FileTasks to return the filename they are expected to produce.
+        FileTasks to return the filename(s) they are expected to produce.
         """
-        return None
+        return []
 
     def clear(self):
         "Clear the existing prerequisites and actions of this task."
@@ -130,8 +129,10 @@ class Task(object):
 
     def _get_sources(self):
         tasks = map(lambda d: self.mgr.find(d, self.scope), self.deps)
-        tasks = filter(lambda t: t.as_source, tasks)
-        return map(lambda t: t.name, tasks)                
+        sources = []
+        for t in tasks:
+            sources.extend(t.as_sources())
+        return sources
 
     def _trace_info(self):
         "Format trace flags for display."

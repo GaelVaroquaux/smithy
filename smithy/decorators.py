@@ -4,11 +4,11 @@ import types
 from smithy.application import application
 from smithy.task import Task
 from smithy.filelist import FileList
-from smithy.filetask import FileTask, FileCreationTask
+from smithy.filetask import FileTask, FileCreationTask, FileSynthTask
 from smithy.multitask import MultiTask
 from smithy.path import aspath
 
-__all__ = ["desc", "rule", "task", "build", "multitask", "ns"]
+__all__ = ["desc", "rule", "task", "build", "synth", "multitask", "ns"]
 
 FUNC_TYPES = (types.FunctionType, types.BuiltinFunctionType)
 METH_TYPES = (types.MethodType, types.BuiltinMethodType)
@@ -79,6 +79,9 @@ def task(*args, **kwargs):
 def build(fname, *args, **kwargs):
     type = FileTask if kwargs.get("recreate", True) else FileCreationTask
     return task(*args, type=type, name=aspath(fname))
+
+def synth(*args):
+    return task(*args, type=FileSynthTask)
 
 def multitask(func):
     return task(func, type=MultiTask)

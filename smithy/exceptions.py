@@ -44,3 +44,10 @@ class RuleRecursionOverflowError(SmithyError):
     def add_target(self, target):
         self.targets.append(target)
 
+class FileSynthError(SmithyError):
+    "A task promised to synth a file but didn't."
+    def __init__(self, name):
+        self.name = name
+    
+    def __str__(self):
+        return "File was never created: %s" % self.name

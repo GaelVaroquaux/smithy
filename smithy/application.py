@@ -92,6 +92,7 @@ class Application(object):
             "task": dec.task,
             "rule": dec.rule,
             "build": dec.build,
+            "synth": dec.synth,
             "multitask": dec.multitask,
             "ns": dec.ns
         }

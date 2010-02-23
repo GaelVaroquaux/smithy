@@ -173,6 +173,7 @@ When a task definition file is loaded by smithy, the commonly used functions are
 * task - Our friendly task function.
 * rule - Define a rule to create implicit tasks for unmet dependencies
 * build - Define a task that creates a file.
+* synth - A task that creates a dynamic list of files.
 * multitask - Not yet implemented.
 * ns - Used in with-statements to help avoid task name clobbering.
 
@@ -249,6 +250,60 @@ You can specify that file tasks will not run if their target file name already e
             out.write("Hi, mom!")
 
 This task will only run when ``myfile.txt`` does not exist.
+
+File Synth Tasks
+----------------
+
+Sometimes a task will need to generate a dynamic list of files based on
+some input file. Without any special helpers, its possible to accomplish
+this behaviour as such:
+::
+
+    # Makes some set of files unknown before
+    # the task is invoked.
+    @build("stamp")
+    def make_files(task):
+        for idx, fname in enumerate("a b c d e f".split()):
+            with open(fname + ".q", "wb") as out:
+                out.write(str(idx))
+        with open(task.name, "wb") as out:
+            out.write('.')
+
+    # A task that depends on said files uses
+    # a FileList and the stamp file.
+    @build("break", ["stamp", FileList("*.q")])
+    def take_break(task):
+        # Ignore the first source as its just
+        # the stamp file.
+        actual_deps = task.sources[1:]
+        pass
+
+That works fine, but takes a bit of thinking. The ``stamp`` file is
+required to force the ``make_files`` task before ``take_break`` in
+execution dependencies. The lazy evaluation of ``FileList``'s then takes
+care of getting the actual dependencies.
+
+To make this scenario a bit easier to reason about there's a ``synth``
+task decorator that can be used to perform the dependency logic
+directly as well as avoid any lazy evaluation confusion:
+::
+
+    @synth
+    def baz(task):
+        for idx, fname in enumerate("a b c d e f".split()):
+            task.synth(fname)
+            with open(fname, "wb") as out:
+                out.write(str(idx))
+
+    @build("coffee", [baz])
+    def make_coffee(task):
+        assert task.sources == "a b c d e f".split()
+        with open("coffee", "wb") as cup:
+            cup.write("delicious")
+
+Synth tasks can also take dependencies just as anything else. Its a
+handy tool when you have a dynamic list of targets from a single
+rule.
 
 Namespaces
 ----------
