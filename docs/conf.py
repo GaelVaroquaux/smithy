@@ -13,7 +13,7 @@ project = u'Smithy'
 copyright = u'2010, Paul J. Davis'
 
 version = '0.4'
-release = '0.4.1'
+release = '0.4.2'
 
 exclude_trees = []
 pygments_style = 'sphinx'
