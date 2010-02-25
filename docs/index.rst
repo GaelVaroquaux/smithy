@@ -305,6 +305,35 @@ Synth tasks can also take dependencies just as anything else. Its a
 handy tool when you have a dynamic list of targets from a single
 rule.
 
+.. warning::
+
+  Remember that a synth task cannot know its output until after
+  it has been invoked. Thus if you aren't careful it will force
+  rerunning any task that depends on it. To avoid this, its best
+  to write a guard at the top of the synth task that will
+  make the necessary ``task.synth`` calls and return early if
+  necessary::
+
+    def guard(task):
+        ts = 0
+        for s in task.sources:
+            ts = max(ts, s.stat().st_mtime)
+        fnames = []
+        for fn in "a b c d e f".split():
+            if not fn.exists()
+                return False
+            if fn.stat().st_mtime < ts:
+                return False
+            fnames.append(fn)
+        map(task.synth, fnames)
+        return True
+
+    @synth([SOURCE])
+    def make_stuff(task):
+        if guard(task):
+            return
+        # Do stuff
+
 Namespaces
 ----------
 
