@@ -263,7 +263,10 @@ def main():
     opts, args = parser.parse_args()
     try:
         application.run(opts, args)
+    except exc.NoActionForTaskError, inst:
+        print "Unable to build: %s" % str(inst)
+    except exc.NoBellowsFileError:
+        print "No Bellows file found."
     except exc.SmithyError, e:
-        print str(e)
-
+        raise
 
